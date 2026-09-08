@@ -25,9 +25,9 @@
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body { margin: 0; min-width: 320px; background-color: var(--paper); background-image: radial-gradient(circle at 16% 9%, rgba(214,184,120,0.20), transparent 38%), radial-gradient(circle at 86% 74%, rgba(172,192,156,0.18), transparent 40%), radial-gradient(rgba(32,53,39,0.05) 0.55px, transparent 0.7px); background-size: auto, auto, 5px 5px; color: var(--ink); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
-html[lang="zh-Hant"] { --display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, "Songti TC", "Noto Serif TC", serif; --sans: "Avenir Next", Avenir, "Gill Sans", "Trebuchet MS", "PingFang TC", "Noto Sans TC", sans-serif; --hand: var(--font-hand), "Xingkai TC", "Kaiti TC", "STKaiti", "DFKai-SB", cursive; }
+html[lang="zh-Hant"] { --display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, "Songti TC", "Noto Serif TC", serif; --sans: "Avenir Next", Avenir, "Gill Sans", "Trebuchet MS", "PingFang TC", "Noto Sans TC", sans-serif; --hand: var(--font-hand), var(--font-hand-zh), "Kaiti TC", "STKaiti", "DFKai-SB", cursive; }
 html[lang="ja"] { --display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, "Yu Mincho", "Hiragino Mincho ProN", serif; --sans: "Avenir Next", Avenir, "Gill Sans", "Trebuchet MS", "Hiragino Sans", "Yu Gothic", sans-serif; --hand: var(--font-hand), "Klee One", "Yu Kyokasho", "Hiragino Maru Gothic ProN", cursive; }
-html[lang="ko"] { --display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, "AppleMyungjo", "Batang", serif; --sans: "Avenir Next", Avenir, "Gill Sans", "Trebuchet MS", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; --hand: var(--font-hand), "Nanum Pen Script", "HYgshb", "Apple SD Gothic Neo", cursive; }
+html[lang="ko"] { --display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, "AppleMyungjo", "Batang", serif; --sans: "Avenir Next", Avenir, "Gill Sans", "Trebuchet MS", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; --hand: var(--font-hand), var(--font-hand-ko), "Nanum Pen Script", "Apple SD Gothic Neo", cursive; }
 html:not([lang="en"]) .hero-copy h1,
 html:not([lang="en"]) .results-hero-copy h1,
 html:not([lang="en"]) .page-intro h1,
