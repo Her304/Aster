@@ -2,6 +2,7 @@
 
 import Image, { type StaticImageData } from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
+import asterMark from "@/images/aster-mark.png";
 import friendsCircle from "@/images/friends-circle.jpg";
 import parkPicnic from "@/images/park-picnic.jpg";
 import { SURVEY_LENGTH, SURVEY_QUESTIONS } from "@/lib/survey";
@@ -85,7 +86,19 @@ function initials(name: string) {
 
 function BrandMark({ small = false }: { small?: boolean }) {
   return (
-    <svg className={small ? "brand-mark small" : "brand-mark"} viewBox="0 0 64 64" aria-hidden="true">
+    <Image
+      className={small ? "brand-mark small" : "brand-mark"}
+      src={asterMark}
+      alt=""
+      sizes="58px"
+      priority
+    />
+  );
+}
+
+function BloomOrnament() {
+  return (
+    <svg className="brand-mark" viewBox="0 0 64 64" aria-hidden="true">
       <g fill="none" stroke="currentColor" strokeWidth="2">
         {[0, 72, 144, 216, 288].map((rotation) => (
           <ellipse key={rotation} cx="32" cy="17" rx="8.5" ry="14" transform={`rotate(${rotation} 32 32)`} />
@@ -736,7 +749,7 @@ function LobbyScreen({ room, copyInvite, copyRecovery, startCircle, busy, error 
         </section>
         <aside className="lobby-aside">
           <div className="panel botanical-note">
-            <span className="note-flower"><BrandMark /></span>
+            <span className="note-flower"><BloomOrnament /></span>
             <span className="card-kicker">{t("lobby.before")}</span>
             <h3>{t("lobby.honesty")}</h3>
             <ul><li>{t("lobby.ruleNamed")}</li><li>{t("lobby.rulePrivate")}</li><li>{t("lobby.ruleReveal")}</li></ul>
@@ -775,7 +788,7 @@ function DashboardScreen({ room, openAssessment, openResults, refresh, openDemoR
 
       {room.room.status === "revealed" && (
         <section className="reveal-banner">
-          <div className="mini-bloom"><BrandMark /></div>
+          <div className="mini-bloom"><BloomOrnament /></div>
           <div><span className="eyebrow">{t("dashboard.petals")}</span><h2>{t("dashboard.resultsReady")}</h2><p>{t("dashboard.resultsBody")}</p></div>
           <button className="button ink" onClick={openResults}>{t("dashboard.openResults")} <ArrowIcon /></button>
         </section>
@@ -797,7 +810,7 @@ function DashboardScreen({ room, openAssessment, openResults, refresh, openDemoR
 
       {selfAssessment && (
         <section className="self-card">
-          <div className="self-ornament"><BrandMark /></div>
+          <div className="self-ornament"><BloomOrnament /></div>
           <div><span className="card-kicker">{t("dashboard.optional")}</span><h2>{t("dashboard.selfQuestion")}</h2><p>{t("dashboard.selfBody")}</p></div>
           <div className="self-actions"><StatusPill status={selfAssessment.status} />{selfAssessment.status !== "submitted" && <button className="button secondary" onClick={() => openAssessment(selfAssessment.id)}>{selfAssessment.answerCount ? t("action.continue") : t("dashboard.selfBegin")} <ArrowIcon /></button>}</div>
         </section>

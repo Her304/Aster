@@ -43,7 +43,7 @@ a { color: inherit; }
 @keyframes loading { from { transform: translateX(-80%); } to { transform: translateX(260%); } }
 
 .wordmark { display: inline-flex; align-items: center; gap: 10px; border: 0; background: transparent; color: var(--ink); font-family: var(--display); font-size: 25px; font-weight: 600; letter-spacing: -0.02em; padding: 0; cursor: pointer; }
-.brand-mark { width: 58px; height: 58px; }
+.brand-mark { width: 58px; height: 58px; object-fit: contain; }
 .brand-mark.small { width: 31px; height: 31px; }
 .icon { width: 19px; height: 19px; flex: 0 0 auto; }
 .icon.flip { transform: scaleX(-1); }
@@ -417,6 +417,8 @@ a { color: inherit; }
   .hero-lede { font-size: 19px; }
   .trust-row { gap: 13px; justify-content: space-between; }
   .trust-row span { display: grid; gap: 5px; }
+  .home-page .trust-row { justify-content: flex-start; gap: 9px; }
+  .home-page .trust-row span { display: inline-flex; align-items: center; gap: 7px; }
   .hero-art { width: 100%; justify-content: center; padding: 4px 0 6px; }
   .hero-art .snapshot { max-width: 300px; }
   .flower-wrap { max-width: 340px; margin: 0 auto; }
@@ -500,7 +502,9 @@ a { color: inherit; }
 }
 
 @media (max-width: 420px) {
-  .trust-row { display: none; }
+  .home-page .trust-row { gap: 8px; margin-top: 26px; padding-top: 18px; font-size: 17px; }
+  .home-page .trust-row span { padding: 5px 10px; }
+  .hero-scrawl { margin-top: 14px; font-size: 34px; }
   .source-link { width: 34px; padding: 0; justify-content: center; }
   .source-link span { display: none; }
   .home-footer .source-link { width: auto; padding: 0 12px; }
