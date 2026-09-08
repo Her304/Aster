@@ -1,6 +1,9 @@
 "use client";
 
+import Image, { type StaticImageData } from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
+import friendsCircle from "@/images/friends-circle.jpg";
+import parkPicnic from "@/images/park-picnic.jpg";
 import { SURVEY_LENGTH, SURVEY_QUESTIONS } from "@/lib/survey";
 import {
   I18nProvider,
@@ -133,6 +136,32 @@ function SourceLink() {
       <GitHubIcon />
       <span>{t("home.source")}</span>
     </a>
+  );
+}
+
+function Snapshot({
+  photo,
+  alt,
+  caption,
+  sizes,
+  className = "",
+  priority = false,
+}: {
+  photo: StaticImageData;
+  alt: string;
+  caption: string;
+  sizes: string;
+  className?: string;
+  priority?: boolean;
+}) {
+  return (
+    <figure className={`snapshot ${className}`.trim()}>
+      <span className="tape" aria-hidden="true" />
+      <span className="snapshot-frame">
+        <Image src={photo} alt={alt} sizes={sizes} placeholder="blur" priority={priority} />
+      </span>
+      <figcaption>{caption}</figcaption>
+    </figure>
   );
 }
 
@@ -602,8 +631,17 @@ function HomeScreen(props: {
             <span><i>02</i> {t("home.trustAnswer")}</span>
             <span><i>03</i> {t("home.trustReveal")}</span>
           </div>
+          <span className="hero-scrawl" aria-hidden="true">✳</span>
         </div>
-        <div className="hero-art"><FlowerIllustration /></div>
+        <div className="hero-art">
+          <Snapshot
+            photo={parkPicnic}
+            alt={t("home.snapAlt")}
+            caption={t("home.snapCaption")}
+            sizes="(max-width: 780px) 88vw, (max-width: 1120px) 42vw, 30vw"
+            priority
+          />
+        </div>
         <form className="entry-card" onSubmit={props.enterRoom}>
           <div className="entry-tabs" role="tablist" aria-label={t("home.enterAria")}>
             <button type="button" role="tab" aria-selected={props.entryMode === "create"} onClick={() => props.setEntryMode("create")}>{t("home.createTab")}</button>
@@ -640,7 +678,17 @@ function HomeScreen(props: {
         </div>
       </section>
       <section className="how-it-works">
-        <div><span className="eyebrow">{t("home.howEyebrow")}</span><h2>{t("home.howTitle")}</h2></div>
+        <div className="how-intro">
+          <span className="eyebrow">{t("home.howEyebrow")}</span>
+          <h2>{t("home.howTitle")}</h2>
+          <Snapshot
+            photo={friendsCircle}
+            alt={t("home.circleAlt")}
+            caption={t("home.circleCaption")}
+            sizes="(max-width: 780px) 82vw, 30vw"
+            className="snapshot-pinned"
+          />
+        </div>
         <div className="steps-grid">
           <article><span>01</span><h3>{t("home.gatherTitle")}</h3><p>{t("home.gatherBody")}</p></article>
           <article><span>02</span><h3>{t("home.reflectTitle")}</h3><p>{t("home.reflectBody")}</p></article>
@@ -648,8 +696,11 @@ function HomeScreen(props: {
         </div>
       </section>
       <footer className="home-footer">
-        <div className="wordmark"><BrandMark small /><span>{t("common.brand")}</span></div>
-        <p>{t("home.disclaimer")}</p>
+        <div className="footer-brand">
+          <div className="wordmark"><BrandMark small /><span>{t("common.brand")}</span></div>
+          <p className="footer-note">{t("home.footerNote")}</p>
+        </div>
+        <p className="footer-disclaimer">{t("home.disclaimer")}</p>
         <SourceLink />
       </footer>
     </div>
