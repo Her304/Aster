@@ -12,13 +12,12 @@ export const runtime = "nodejs";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ code: string }> }) {
   const { code } = await params;
-  const room = getRoomByCode(code);
+  const room = await getRoomByCode(code);
   if (!room) return error("Room not found.", 404);
   const participant = await currentParticipant(room.id);
   if (!participant) return error("This private room doesn’t recognize this browser.", 401);
 
-  const participants = getRoomParticipants(room.id);
-  const completion = roomCompletion(room.id);
+  const [participants, completion] = await Promise.all([getRoomParticipants(room.id), roomCompletion(room.id)]);
   const completionByReviewer = new Map(completion.map((row) => [row.reviewer_id, row]));
   const members = participants.map((member) => ({
     id: member.id,
@@ -27,14 +26,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     requiredDone: completionByReviewer.get(member.id)?.required_done ?? 0,
     requiredTotal: completionByReviewer.get(member.id)?.required_total ?? 0,
   }));
-  const assessments = room.status === "lobby" ? [] : getAssessmentsForReviewer(room.id, participant.id);
+  const assessments = room.status === "lobby" ? [] : await getAssessmentsForReviewer(room.id, participant.id);
 
   return NextResponse.json({
     room: {
       code: room.code,
       status: room.status,
       isDemo: Boolean(room.is_demo),
-      createdAt: room.created_at,
+      createdAt: room.created_at instanceof Date ? room.created_at.toISOString() : room.created_at,
     },
     me: {
       id: participant.id,

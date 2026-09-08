@@ -4,7 +4,7 @@ import { getParticipantBySession } from "@/lib/db";
 export const SESSION_COOKIE = "aster_session";
 
 export async function currentParticipant(roomId?: string) {
-  return getParticipantBySession((await cookies()).get(SESSION_COOKIE)?.value, roomId);
+  return await getParticipantBySession((await cookies()).get(SESSION_COOKIE)?.value, roomId);
 }
 
 export function sessionCookie(value: string) {

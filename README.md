@@ -23,6 +23,18 @@ npm run dev
 
 Open http://localhost:3000. Data is stored locally in `data/aster.db` using SQLite.
 
+## Deploy with durable storage
+
+Aster automatically uses Neon Postgres whenever `DATABASE_URL` is set and keeps
+SQLite as the zero-configuration local fallback. On its first database request,
+the server creates the relational schema and idempotently seeds the versioned
+200-question bank.
+
+For Vercel, connect a Neon database from the Storage marketplace, ensure the
+generated `DATABASE_URL` is available to Production and Preview, then deploy.
+Do not deploy the SQLite fallback to a serverless host because its filesystem is
+ephemeral.
+
 ## Checks
 
 ```bash

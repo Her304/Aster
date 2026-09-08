@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
   const nickname = cleanNickname(body.nickname);
   if (!nickname) return error("Choose a nickname between 2 and 24 characters.");
 
-  const created = createRoom(nickname);
+  const created = await createRoom(nickname);
   const response = NextResponse.json({
     code: created.code,
     recoveryPath: `/api/recover?token=${created.recoveryToken}`,

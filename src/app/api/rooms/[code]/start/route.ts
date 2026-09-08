@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createAssessments, db, getRoomByCode } from "@/lib/db";
+import { createAssessments, getRoomByCode, locking, transaction } from "@/lib/db";
 import { error } from "@/lib/http";
 import { currentParticipant } from "@/lib/session";
 
@@ -7,33 +7,35 @@ export const runtime = "nodejs";
 
 export async function POST(_request: Request, { params }: { params: Promise<{ code: string }> }) {
   const { code } = await params;
-  const room = getRoomByCode(code);
+  const room = await getRoomByCode(code);
   if (!room) return error("Room not found.", 404);
   const participant = await currentParticipant(room.id);
   if (!participant) return error("You’re not a member of this room.", 401);
   if (participant.id !== room.host_participant_id) return error("Only the host can start the circle.", 403);
-  let transactionOpen = false;
+  let issue: NextResponse | undefined;
   try {
-    db.exec("BEGIN IMMEDIATE");
-    transactionOpen = true;
-    const lockedRoom = db.prepare("SELECT status FROM rooms WHERE id = ?").get(room.id) as { status: string };
-    if (lockedRoom.status !== "lobby") {
-      db.exec("ROLLBACK");
-      transactionOpen = false;
-      return error("This circle has already started.", 409);
-    }
-    const size = db.prepare("SELECT COUNT(*) AS count FROM participants WHERE room_id = ?").get(room.id) as { count: number };
-    if (size.count < 2) {
-      db.exec("ROLLBACK");
-      transactionOpen = false;
-      return error("Invite at least one friend before starting.", 409);
-    }
-    createAssessments(room.id, false);
-    db.exec("COMMIT");
-    transactionOpen = false;
+    await transaction(async (database) => {
+      const lockedRoom = await database.get<{ status: string }>(
+        locking("SELECT status FROM rooms WHERE id = ?", database),
+        [room.id],
+      );
+      if (!lockedRoom || lockedRoom.status !== "lobby") {
+        issue = error("This circle has already started.", 409);
+        return;
+      }
+      const size = await database.get<{ count: number | string }>(
+        "SELECT COUNT(*) AS count FROM participants WHERE room_id = ?",
+        [room.id],
+      );
+      if (Number(size?.count || 0) < 2) {
+        issue = error("Invite at least one friend before starting.", 409);
+        return;
+      }
+      await createAssessments(room.id, database);
+    });
   } catch {
-    if (transactionOpen) db.exec("ROLLBACK");
     return error("The circle couldn’t be locked. Please try again.", 500);
   }
+  if (issue) return issue;
   return NextResponse.json({ ok: true });
 }
