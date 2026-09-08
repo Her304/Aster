@@ -69,6 +69,8 @@ const responseOptions = [
 
 const avatarColors = ["lilac", "moss", "clay", "sky", "butter"];
 
+const repositoryUrl = "https://github.com/Her304/Aster";
+
 function initials(name: string) {
   return name
     .split(/\s+/)
@@ -104,6 +106,33 @@ function CheckIcon() {
     <svg className="icon" viewBox="0 0 20 20" aria-hidden="true">
       <path d="m4 10 4 4 8-9" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
+  );
+}
+
+function GitHubIcon() {
+  return (
+    <svg className="icon" viewBox="0 0 16 16" aria-hidden="true">
+      <path
+        fill="currentColor"
+        d="M8 0a8 8 0 0 0-2.53 15.59c.4.07.55-.17.55-.38l-.01-1.49c-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.5 7.5 0 0 1 4 0c1.53-1.03 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48l-.01 2.2c0 .21.15.46.55.38A8 8 0 0 0 8 0Z"
+      />
+    </svg>
+  );
+}
+
+function SourceLink() {
+  const { t } = useI18n();
+  return (
+    <a
+      className="source-link"
+      href={repositoryUrl}
+      target="_blank"
+      rel="noreferrer"
+      aria-label={t("home.source")}
+    >
+      <GitHubIcon />
+      <span>{t("home.source")}</span>
+    </a>
   );
 }
 
@@ -558,7 +587,10 @@ function HomeScreen(props: {
       <nav className="home-nav">
         <div className="wordmark"><BrandMark small /><span>{t("common.brand")}</span></div>
         <span className="nav-note">{t("home.navNote")}</span>
-        <LanguageSelect />
+        <div className="nav-cluster">
+          <SourceLink />
+          <LanguageSelect />
+        </div>
       </nav>
       <section className="hero">
         <div className="hero-copy">
@@ -615,7 +647,11 @@ function HomeScreen(props: {
           <article><span>03</span><h3>{t("home.revealTitle")}</h3><p>{t("home.revealBody")}</p></article>
         </div>
       </section>
-      <footer className="home-footer"><div className="wordmark"><BrandMark small /><span>{t("common.brand")}</span></div><p>{t("home.disclaimer")}</p></footer>
+      <footer className="home-footer">
+        <div className="wordmark"><BrandMark small /><span>{t("common.brand")}</span></div>
+        <p>{t("home.disclaimer")}</p>
+        <SourceLink />
+      </footer>
     </div>
   );
 }
