@@ -25,9 +25,9 @@
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body { margin: 0; min-width: 320px; background-color: var(--paper); background-image: radial-gradient(circle at 16% 9%, rgba(214,184,120,0.20), transparent 38%), radial-gradient(circle at 86% 74%, rgba(172,192,156,0.18), transparent 40%), radial-gradient(rgba(32,53,39,0.05) 0.55px, transparent 0.7px); background-size: auto, auto, 5px 5px; color: var(--ink); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
-html[lang="zh-Hant"] { --display: "Songti TC", "Noto Serif TC", serif; --sans: "PingFang TC", "Noto Sans TC", sans-serif; --hand: var(--font-hand), "Xingkai TC", "Kaiti TC", "STKaiti", "DFKai-SB", cursive; }
-html[lang="ja"] { --display: "Yu Mincho", "Hiragino Mincho ProN", serif; --sans: "Hiragino Sans", "Yu Gothic", sans-serif; --hand: var(--font-hand), "Klee One", "Yu Kyokasho", "Hiragino Maru Gothic ProN", cursive; }
-html[lang="ko"] { --display: "AppleMyungjo", "Batang", serif; --sans: "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; --hand: var(--font-hand), "Nanum Pen Script", "HYgshb", "Apple SD Gothic Neo", cursive; }
+html[lang="zh-Hant"] { --display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, "Songti TC", "Noto Serif TC", serif; --sans: "Avenir Next", Avenir, "Gill Sans", "Trebuchet MS", "PingFang TC", "Noto Sans TC", sans-serif; --hand: var(--font-hand), "Xingkai TC", "Kaiti TC", "STKaiti", "DFKai-SB", cursive; }
+html[lang="ja"] { --display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, "Yu Mincho", "Hiragino Mincho ProN", serif; --sans: "Avenir Next", Avenir, "Gill Sans", "Trebuchet MS", "Hiragino Sans", "Yu Gothic", sans-serif; --hand: var(--font-hand), "Klee One", "Yu Kyokasho", "Hiragino Maru Gothic ProN", cursive; }
+html[lang="ko"] { --display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, "AppleMyungjo", "Batang", serif; --sans: "Avenir Next", Avenir, "Gill Sans", "Trebuchet MS", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; --hand: var(--font-hand), "Nanum Pen Script", "HYgshb", "Apple SD Gothic Neo", cursive; }
 html:not([lang="en"]) .hero-copy h1,
 html:not([lang="en"]) .results-hero-copy h1,
 html:not([lang="en"]) .page-intro h1,
@@ -171,7 +171,7 @@ a { color: inherit; }
 .header-actions { display: flex; align-items: center; gap: 14px; }
 .room-code { height: 34px; padding: 0 12px; border: 1px solid var(--line); border-radius: 100px; background: rgba(255,255,255,0.35); font-family: var(--display); font-size: 14px; font-weight: 600; letter-spacing: 0.08em; cursor: pointer; }
 .room-code span { font-family: var(--sans); color: var(--fern); font-size: 9px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
-.avatar { width: 48px; height: 48px; display: inline-grid; flex: 0 0 auto; place-items: center; border: 1px solid var(--ink); border-radius: 50%; background: var(--paper-deep); font-family: var(--display); font-size: 14px; font-weight: 700; }
+.avatar { width: 48px; height: 48px; display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; border: 1px solid var(--ink); border-radius: 50%; background: var(--paper-deep); font-family: var(--display); font-size: 14px; font-weight: 700; }
 .avatar-mini { width: 36px; height: 36px; padding: 0; cursor: pointer; }
 .avatar-small { width: 35px; height: 35px; font-size: 11px; }
 .avatar.lilac { background: var(--lilac); }.avatar.moss { background: var(--moss); }.avatar.clay { background: var(--clay); }.avatar.sky { background: var(--sky); }.avatar.butter { background: var(--butter); }.avatar.ink { background: var(--ink); color: white; border-color: var(--ink); }
@@ -368,7 +368,7 @@ a { color: inherit; }
 .room-summary > div:first-child p { color: var(--fern); font-size: 11px; }
 .type-garden { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .type-garden article { min-height: 82px; padding: 13px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; background: var(--white); border: 1px solid var(--line); }
-.type-garden strong, .type-garden span { display: block; }
+.type-garden div strong, .type-garden div span { display: block; }
 .type-garden strong { font-family: var(--display); font-size: 16px; }.type-garden div span { color: var(--fern); font-size: 8px; }
 .type-garden b { font-family: var(--display); font-size: 19px; }
 .disclaimer { max-width: 760px; margin: 35px auto 0; color: var(--fern); font-size: 9px; line-height: 1.6; text-align: center; }
