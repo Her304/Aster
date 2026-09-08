@@ -285,7 +285,7 @@ const zhHant: TranslationTable = {
   "home.source": "在 GitHub 查看原始碼",
   "home.snapCaption": "星期日，繞了遠路",
   "home.snapAlt": "朋友們坐在陽光灑落的公園野餐墊上，手裡拿著冰飲",
-  "home.circleCaption": "所有人，同時",
+  "home.circleCaption": "與此同時，了解彼此",
   "home.circleAlt": "從下往上看，五位朋友圍成一圈，朝著明亮的天空舉起手機",
   "home.footerNote": "獻給最了解你的那些人。",
   "lobby.eyebrow": "你的朋友圈正在成形",
