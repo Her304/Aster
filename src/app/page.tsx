@@ -2,6 +2,7 @@
 
 import Image, { type StaticImageData } from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
+import asterBouquet from "@/images/aster-bouquet.webp";
 import asterMark from "@/images/aster-mark.png";
 import friendsCircle from "@/images/friends-circle.jpg";
 import parkPicnic from "@/images/park-picnic.jpg";
@@ -198,21 +199,12 @@ function FlowerIllustration({ names }: { names?: string[] }) {
   const { t } = useI18n();
   const petalNames = names ?? [t("common.you"), ...Array.from({ length: 4 }, () => t("common.friends"))];
   return (
-    <div className="flower-wrap" aria-label={t("results.petalCaption")}>
-      <svg viewBox="0 0 500 500" role="img">
-        <path className="flower-stem" d="M251 282C249 345 270 395 251 469" />
-        <path className="flower-leaf" d="M252 392C207 356 173 364 161 398c37 11 67 8 91-6Z" />
-        <path className="flower-leaf leaf-right" d="M257 430c35-35 68-36 87-9-28 20-57 23-87 9Z" />
-        <g className="hero-petals">
-          {[0, 72, 144, 216, 288].map((rotation, index) => (
-            <g key={rotation} transform={`rotate(${rotation} 250 244)`} style={{ animationDelay: `${index * 90}ms` }}>
-              <path className={`petal petal-${index}`} d="M250 239C191 212 187 137 221 92c47 24 71 94 29 147Z" />
-            </g>
-          ))}
-        </g>
-        <circle className="flower-center" cx="250" cy="244" r="43" />
-        <circle className="flower-center-detail" cx="250" cy="244" r="31" />
-      </svg>
+    <div className="flower-wrap">
+      <Image
+        src={asterBouquet}
+        alt=""
+        sizes="(max-width: 780px) 82vw, 480px"
+      />
       <div className="petal-notes" aria-hidden="true">
         {petalNames.slice(0, 5).map((name, index) => (
           <span key={`${name}-${index}`} className={`petal-note note-${index}`}>
