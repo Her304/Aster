@@ -3,7 +3,6 @@ import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import type { DatabaseSync } from "node:sqlite";
 import { neonConfig, Pool, type PoolClient } from "@neondatabase/serverless";
-import WebSocket from "ws";
 import { QUESTION_BANK } from "@/data/questions";
 
 type SqlValue = string | number | null;
@@ -110,6 +109,11 @@ let sqliteDatabase: DatabaseSync | undefined;
 let sqliteTransactionTail: Promise<void> = Promise.resolve();
 
 async function getSqliteDatabase() {
+  if (runningOnCloudflare && !process.env.DATABASE_URL) {
+    throw new Error(
+      "DATABASE_URL is required on Cloudflare Workers; the SQLite fallback needs a writable filesystem.",
+    );
+  }
   if (sqliteDatabase) return sqliteDatabase;
   const { DatabaseSync: SqliteDatabase } = await import("node:sqlite");
   const dataDirectory = join(process.cwd(), "data");
@@ -138,19 +142,51 @@ const sqliteExecutor: DbExecutor = {
   },
 };
 
-neonConfig.webSocketConstructor = WebSocket;
+// Cloudflare Workers expose a native global WebSocket and Node 21+ ships one
+// too; only fall back to the `ws` npm package on older Node runtimes. Loaded
+// lazily so the `ws` package never has to resolve in a Workers bundle.
+let webSocketReady: Promise<void> | undefined;
+function ensureWebSocketConstructor() {
+  webSocketReady ??= (async () => {
+    if (typeof globalThis.WebSocket === "undefined") {
+      const { default: WebSocketConstructor } = await import("ws");
+      neonConfig.webSocketConstructor = WebSocketConstructor as unknown as typeof globalThis.WebSocket;
+    }
+  })();
+  return webSocketReady;
+}
+
+// WebSocket-backed Neon connections cannot outlive a single request on
+// Cloudflare Workers, so there the pool must be created and torn down per
+// request. On long-lived Node servers the module-level pool is reused.
+const runningOnCloudflare =
+  typeof navigator !== "undefined" && navigator.userAgent === "Cloudflare-Workers";
 
 let postgresPool: Pool | undefined;
 
-function getPostgresPool() {
+function newPostgresPool() {
   if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required for Postgres persistence.");
-  postgresPool ??= new Pool({
+  return new Pool({
     connectionString: process.env.DATABASE_URL,
     max: 2,
     idleTimeoutMillis: 10_000,
     connectionTimeoutMillis: 10_000,
   });
+}
+
+function getPostgresPool() {
+  postgresPool ??= newPostgresPool();
   return postgresPool;
+}
+
+async function withPostgresScope<T>(work: (pool: Pool) => Promise<T>): Promise<T> {
+  await ensureWebSocketConstructor();
+  const pool = runningOnCloudflare ? newPostgresPool() : getPostgresPool();
+  try {
+    return await work(pool);
+  } finally {
+    if (runningOnCloudflare) await pool.end().catch(() => undefined);
+  }
 }
 
 function postgresExecutor(client: Pool | PoolClient): DbExecutor {
@@ -172,19 +208,20 @@ function postgresExecutor(client: Pool | PoolClient): DbExecutor {
 }
 
 async function rawPostgresTransaction<T>(work: (executor: DbExecutor) => Promise<T>) {
-  const pool = getPostgresPool();
-  const client = await pool.connect();
-  try {
-    await client.query("BEGIN");
-    const result = await work(postgresExecutor(client));
-    await client.query("COMMIT");
-    return result;
-  } catch (error) {
-    await client.query("ROLLBACK").catch(() => undefined);
-    throw error;
-  } finally {
-    client.release();
-  }
+  return withPostgresScope(async (pool) => {
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      const result = await work(postgresExecutor(client));
+      await client.query("COMMIT");
+      return result;
+    } catch (error) {
+      await client.query("ROLLBACK").catch(() => undefined);
+      throw error;
+    } finally {
+      client.release();
+    }
+  });
 }
 
 let initialization: Promise<void> | undefined;
@@ -233,23 +270,29 @@ async function ready() {
   await initialization;
 }
 
-function rootExecutor() {
-  return usesPostgres ? postgresExecutor(getPostgresPool()) : sqliteExecutor;
-}
-
 export async function queryAll<T>(sql: string, params: SqlValue[] = []) {
   await ready();
-  return rootExecutor().all<T>(sql, params);
+  if (usesPostgres) {
+    return withPostgresScope((pool) => postgresExecutor(pool).all<T>(sql, params));
+  }
+  return sqliteExecutor.all<T>(sql, params);
 }
 
 export async function queryOne<T>(sql: string, params: SqlValue[] = []) {
   await ready();
-  return rootExecutor().get<T>(sql, params);
+  if (usesPostgres) {
+    return withPostgresScope((pool) => postgresExecutor(pool).get<T>(sql, params));
+  }
+  return sqliteExecutor.get<T>(sql, params);
 }
 
 export async function execute(sql: string, params: SqlValue[] = []) {
   await ready();
-  return rootExecutor().run(sql, params);
+  if (usesPostgres) {
+    await withPostgresScope((pool) => postgresExecutor(pool).run(sql, params));
+    return;
+  }
+  await sqliteExecutor.run(sql, params);
 }
 
 export async function transaction<T>(work: (executor: DbExecutor) => Promise<T>) {
@@ -349,28 +392,35 @@ export async function createRoom(nickname: string, isDemo = false, executor?: Db
 }
 
 export async function getRoomByCode(code: string, executor?: DbExecutor) {
-  const database = executor || rootExecutor();
-  if (!executor) await ready();
-  return database.get<RoomRow>("SELECT * FROM rooms WHERE code = ?", [code.toUpperCase()]);
+  await ready();
+  const sql = "SELECT * FROM rooms WHERE code = ?";
+  const params = [code.toUpperCase()];
+  if (executor) return executor.get<RoomRow>(sql, params);
+  if (usesPostgres) return withPostgresScope((pool) => postgresExecutor(pool).get<RoomRow>(sql, params));
+  return sqliteExecutor.get<RoomRow>(sql, params);
 }
 
 export async function getParticipantBySession(sessionToken: string | undefined, roomId?: string, executor?: DbExecutor) {
   if (!sessionToken) return undefined;
-  const database = executor || rootExecutor();
-  if (!executor) await ready();
+  await ready();
   const sql = roomId
     ? "SELECT id, room_id, nickname, created_at FROM participants WHERE session_hash = ? AND room_id = ?"
     : "SELECT id, room_id, nickname, created_at FROM participants WHERE session_hash = ?";
-  return database.get<ParticipantRow>(sql, roomId ? [hashToken(sessionToken), roomId] : [hashToken(sessionToken)]);
+  const params = roomId ? [hashToken(sessionToken), roomId] : [hashToken(sessionToken)];
+  if (executor) return executor.get<ParticipantRow>(sql, params);
+  if (usesPostgres) {
+    return withPostgresScope((pool) => postgresExecutor(pool).get<ParticipantRow>(sql, params));
+  }
+  return sqliteExecutor.get<ParticipantRow>(sql, params);
 }
 
 export async function getRoomParticipants(roomId: string, executor?: DbExecutor) {
-  const database = executor || rootExecutor();
-  if (!executor) await ready();
-  return database.all<ParticipantRow>(
-    "SELECT id, room_id, nickname, created_at FROM participants WHERE room_id = ? ORDER BY created_at",
-    [roomId],
-  );
+  await ready();
+  const sql = "SELECT id, room_id, nickname, created_at FROM participants WHERE room_id = ? ORDER BY created_at";
+  const params = [roomId];
+  if (executor) return executor.all<ParticipantRow>(sql, params);
+  if (usesPostgres) return withPostgresScope((pool) => postgresExecutor(pool).all<ParticipantRow>(sql, params));
+  return sqliteExecutor.all<ParticipantRow>(sql, params);
 }
 
 export async function createAssessments(roomId: string, executor?: DbExecutor): Promise<void> {
@@ -407,19 +457,21 @@ export async function getAssessmentsForReviewer(roomId: string, reviewerId: stri
 }
 
 export async function getAssessment(assessmentId: string, executor?: DbExecutor) {
-  const database = executor || rootExecutor();
-  if (!executor) await ready();
-  const row = await database.get<AssessmentRow>(
-    `SELECT a.*, target.nickname AS target_name, reviewer.nickname AS reviewer_name,
+  await ready();
+  const sql = `SELECT a.*, target.nickname AS target_name, reviewer.nickname AS reviewer_name,
        COUNT(ans.id) AS answer_count
      FROM assessments a
      JOIN participants target ON target.id = a.target_id
      JOIN participants reviewer ON reviewer.id = a.reviewer_id
      LEFT JOIN answers ans ON ans.assessment_id = a.id
      WHERE a.id = ?
-     GROUP BY a.id, target.nickname, reviewer.nickname`,
-    [assessmentId],
-  );
+     GROUP BY a.id, target.nickname, reviewer.nickname`;
+  const params = [assessmentId];
+  const row = executor
+    ? await executor.get<AssessmentRow>(sql, params)
+    : usesPostgres
+      ? await withPostgresScope((pool) => postgresExecutor(pool).get<AssessmentRow>(sql, params))
+      : await sqliteExecutor.get<AssessmentRow>(sql, params);
   return row ? { ...row, answer_count: Number(row.answer_count || 0) } : undefined;
 }
 
@@ -439,19 +491,23 @@ export async function roomCompletion(roomId: string) {
 }
 
 export async function maybeRevealRoom(roomId: string, executor?: DbExecutor) {
-  const database = executor || rootExecutor();
-  if (!executor) await ready();
-  const counts = await database.get<{ total: number | string; done: number | string | null }>(
-    `SELECT COUNT(*) AS total,
-       SUM(CASE WHEN status = 'submitted' THEN 1 ELSE 0 END) AS done
-     FROM assessments WHERE room_id = ? AND is_self = 0`,
-    [roomId],
-  );
-  const total = Number(counts?.total || 0);
-  const done = Number(counts?.done || 0);
-  if (total > 0 && total === done) {
-    await database.run("UPDATE rooms SET status = 'revealed' WHERE id = ?", [roomId]);
-    return true;
-  }
-  return false;
+  await ready();
+  const work = async (database: DbExecutor) => {
+    const counts = await database.get<{ total: number | string; done: number | string | null }>(
+      `SELECT COUNT(*) AS total,
+         SUM(CASE WHEN status = 'submitted' THEN 1 ELSE 0 END) AS done
+       FROM assessments WHERE room_id = ? AND is_self = 0`,
+      [roomId],
+    );
+    const total = Number(counts?.total || 0);
+    const done = Number(counts?.done || 0);
+    if (total > 0 && total === done) {
+      await database.run("UPDATE rooms SET status = 'revealed' WHERE id = ?", [roomId]);
+      return true;
+    }
+    return false;
+  };
+  if (executor) return work(executor);
+  if (usesPostgres) return withPostgresScope((pool) => work(postgresExecutor(pool)));
+  return work(sqliteExecutor);
 }

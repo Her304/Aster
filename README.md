@@ -30,9 +30,25 @@ SQLite as the zero-configuration local fallback. On its first database request,
 the server creates the relational schema and idempotently seeds the versioned
 200-question bank.
 
-For Vercel, connect a Neon database from the Storage marketplace, ensure the
-generated `DATABASE_URL` is available to Production and Preview, then deploy.
-Do not deploy the SQLite fallback to a serverless host because its filesystem is
+### Cloudflare Workers (current)
+
+```bash
+cp .dev.vars.example .dev.vars   # then fill in DATABASE_URL
+npx wrangler login               # one-time browser auth
+npm run preview                  # build + run the Worker locally
+npm run deploy                   # ship to Cloudflare
+```
+
+Set the pooled Neon `DATABASE_URL` (host contains `-pooler`) via
+`wrangler secret put DATABASE_URL` for deployed environments. Optional analytics:
+export `NEXT_PUBLIC_CF_BEACON_TOKEN` before building to enable the Cloudflare
+Web Analytics beacon.
+
+### Vercel (legacy)
+
+Connect a Neon database from the Storage marketplace, ensure the generated
+`DATABASE_URL` is available to Production and Preview, then deploy. Do not
+deploy the SQLite fallback to a serverless host because its filesystem is
 ephemeral.
 
 ## Checks

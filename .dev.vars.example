@@ -1,0 +1,7 @@
+# Copy to .dev.vars (gitignored) and fill in real values.
+# Used by `npm run preview` (wrangler dev) and `npm run deploy`.
+
+# Neon pooled connection string (host contains "-pooler"):
+DATABASE_URL=postgresql://user:password@ep-xxx-pooler.region.aws.neon.tech/dbname?sslmode=require
+
+NEXTJS_ENV=production

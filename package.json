@@ -3,26 +3,31 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
     "build": "next build",
+    "dev": "next dev",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
-    "@vercel/analytics": "^2.0.1",
     "next": "16.3.4",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "ws": "^8.18.3"
   },
   "devDependencies": {
+    "@opennextjs/cloudflare": "^1.20.6",
     "@types/node": "^24.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@types/ws": "^8.18.1",
     "typescript": "^5.7.0",
-    "vitest": "^3.2.0"
+    "vitest": "^3.2.0",
+    "wrangler": "^4.136.3"
   }
 }

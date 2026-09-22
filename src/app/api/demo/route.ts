@@ -131,7 +131,8 @@ export async function POST(request: NextRequest) {
       await insertAnswers(database, answerRows);
       await maybeRevealRoom(created.roomId, database);
     });
-  } catch {
+  } catch (caught) {
+    console.error("demo room creation failed", caught);
     return error("The sample circle couldn’t be opened. Please try again.", 500);
   }
 

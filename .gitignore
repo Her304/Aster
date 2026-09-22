@@ -5,3 +5,14 @@ data/*.db-*
 .env*.local
 npm-debug.log*
 *.tsbuildinfo
+
+# OpenNext
+.open-next
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+.vercel
+.env*
+backups/

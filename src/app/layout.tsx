@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
 import { Caveat } from "next/font/google";
 import localFont from "next/font/local";
-import { Analytics } from "@vercel/analytics/next";
+import Script from "next/script";
 import "./globals.css";
+
+// Cloudflare Web Analytics beacon. Set NEXT_PUBLIC_CF_BEACON_TOKEN in the
+// Worker environment to enable visitor reporting; without it nothing loads.
+const cfBeaconToken = process.env.NEXT_PUBLIC_CF_BEACON_TOKEN;
 
 // Self-hosted at build time, so the handwriting survives machines that have no
 // script face of their own.
@@ -42,7 +46,14 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="en" className={`${handwriting.variable} ${koreanHand.variable} ${chineseHand.variable}`}>
       <body>
         {children}
-        <Analytics />
+        {cfBeaconToken ? (
+          <Script
+            defer
+            src="https://static.cloudflareinsights.com/beacon.min.js"
+            data-cf-beacon={JSON.stringify({ token: cfBeaconToken })}
+            strategy="afterInteractive"
+          />
+        ) : null}
       </body>
     </html>
   );
