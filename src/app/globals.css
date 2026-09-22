@@ -514,3 +514,44 @@ a { color: inherit; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
+
+/* Admin console (internal tooling) */
+.admin-page { min-height: 100vh; background: var(--paper); color: var(--ink); }
+.admin-main { max-width: 1180px; margin: 0 auto; padding: 48px 5vw 90px; }
+.admin-center { display: grid; place-items: center; color: var(--ink-soft); }
+.admin-box { background: var(--white); border: 1px solid var(--ink); box-shadow: 10px 10px 0 var(--moss), var(--shadow); padding: 42px; max-width: 520px; margin: 8vh auto; display: grid; gap: 10px; }
+.admin-login { background: var(--white); border: 1px solid var(--ink); box-shadow: 10px 10px 0 var(--moss), var(--shadow); padding: 42px; max-width: 460px; margin: 10vh auto 0; display: grid; gap: 16px; }
+.admin-login h1, .admin-box h1 { margin: 0; font-family: var(--display); font-size: 30px; }
+.admin-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; margin: 0 0 22px; }
+.admin-head h1 { margin: 6px 0 0; font-family: var(--display); font-size: 44px; font-weight: 500; letter-spacing: -0.03em; }
+.admin-head-actions { display: flex; gap: 10px; }
+.admin-head-actions .button { min-height: 40px; padding: 0 14px; }
+.admin-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin: 0 0 30px; }
+.admin-stat { background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; display: grid; gap: 4px; }
+.admin-stat strong { font-family: var(--display); font-size: 32px; font-weight: 600; letter-spacing: -0.02em; }
+.admin-stat small { color: #758177; }
+.admin-tools { display: flex; align-items: flex-end; gap: 16px; margin: 0 0 16px; flex-wrap: wrap; }
+.admin-search input { width: 180px; height: 46px; }
+.admin-tools .field select { height: 46px; padding: 0 12px; border: 1px solid var(--line); border-radius: 3px; background: var(--white); color: var(--ink); }
+.admin-demo { flex-direction: row; align-items: center; gap: 8px; text-transform: none; letter-spacing: 0; }
+.admin-total { margin: 0 0 4px auto; color: #758177; font-weight: 700; }
+.admin-table { width: 100%; border-collapse: collapse; background: var(--white); border: 1px solid var(--ink); font-size: 14px; }
+.admin-table th { text-align: left; padding: 11px 14px; background: var(--paper-deep); border-bottom: 1px solid var(--ink); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+.admin-table td { padding: 10px 14px; border-bottom: 1px solid var(--line); }
+.admin-table tr:hover td { background: rgba(199, 211, 183, 0.28); }
+.admin-active-row td { background: rgba(199, 211, 183, 0.42); }
+.admin-code { font-family: var(--display); font-size: 17px; letter-spacing: 0.1em; font-weight: 600; }
+.admin-demo-tag { margin-left: 8px; padding: 2px 8px; border-radius: 999px; background: var(--lilac); color: var(--ink); font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; font-style: normal; }
+.admin-open { min-height: 34px; padding: 0 12px; }
+.admin-pager { display: flex; align-items: center; gap: 16px; margin: 16px 0 40px; color: var(--ink-soft); }
+.admin-pager .button { min-height: 38px; padding: 0 14px; }
+.admin-detail { background: var(--white); border: 1px solid var(--ink); box-shadow: 10px 10px 0 var(--moss), var(--shadow); padding: 30px; margin: 0 0 60px; display: grid; gap: 12px; }
+.admin-detail h2 { margin: 0; font-family: var(--display); font-size: 30px; display: flex; align-items: center; gap: 12px; }
+.admin-detail h3 { margin: 10px 0 0; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fern); }
+.admin-code-inline { letter-spacing: 0.12em; }
+.admin-meta { margin: 0; color: #5c6d5f; font-size: 13px; }
+.admin-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.admin-list li { display: flex; align-items: baseline; gap: 12px; border-bottom: 1px dashed var(--line); padding-bottom: 6px; }
+.admin-list li span { color: #758177; font-size: 12px; }
+.admin-export { display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
+.admin-export .button { min-height: 40px; padding: 0 14px; }
