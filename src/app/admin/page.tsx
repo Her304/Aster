@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface Overview {
   rooms: number;
@@ -84,6 +84,7 @@ export default function AdminPage() {
   const [page, setPage] = useState(0);
   const [detail, setDetail] = useState<RoomDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const detailRef = useRef<HTMLElement | null>(null);
 
   const limit = 50;
 
@@ -159,9 +160,12 @@ export default function AdminPage() {
 
   async function openRoom(code: string) {
     setDetailLoading(true);
-    const response = await fetch(`/api/admin/rooms/${code}`, { cache: "no-store" });
-    setDetailLoading(false);
-    if (response.ok) setDetail(await response.json());
+    try {
+      const response = await fetch(`/api/admin/rooms/${code}`, { cache: "no-store" });
+      if (response.ok) setDetail(await response.json());
+    } finally {
+      setDetailLoading(false);
+    }
   }
 
   async function exportRoom(code: string, format: "json" | "csv") {
@@ -201,6 +205,10 @@ export default function AdminPage() {
     link.click();
     URL.revokeObjectURL(url);
   }
+
+  useEffect(() => {
+    if (detail) detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [detail]);
 
   if (!configured) {
     return (
@@ -344,7 +352,7 @@ export default function AdminPage() {
                   onClick={() => openRoom(room.code)}
                   disabled={detailLoading}
                 >
-                  Open
+                  {detailLoading ? "Loading…" : "Open"}
                 </button>
               </td>
             </tr>
@@ -372,7 +380,7 @@ export default function AdminPage() {
       </nav>
 
       {detail ? (
-        <section className="admin-detail">
+        <section className="admin-detail" ref={detailRef}>
           <h2>
             Room <span className="admin-code-inline">{detail.room.code}</span>
             <em className="admin-demo-tag">{STATUS_LABEL[detail.room.status]}</em>
