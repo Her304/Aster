@@ -71,9 +71,74 @@ const SCHEMA_SQL = `
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
 
+  CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,
+    email TEXT NOT NULL UNIQUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS sign_in_codes (
+    email TEXT PRIMARY KEY,
+    code_hash TEXT NOT NULL,
+    expires_at BIGINT NOT NULL,
+    attempts INTEGER NOT NULL DEFAULT 0,
+    sent_count INTEGER NOT NULL DEFAULT 0,
+    window_started_at BIGINT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS user_sessions (
+    token_hash TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    expires_at BIGINT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS visitors (
+    id TEXT PRIMARY KEY,
+    token_hash TEXT NOT NULL UNIQUE,
+    user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS surveys (
+    id TEXT PRIMARY KEY,
+    code TEXT NOT NULL UNIQUE,
+    owner_id TEXT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    display_name TEXT NOT NULL,
+    self_type TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'open' CHECK(status IN ('open', 'closed')),
+    board_public INTEGER NOT NULL DEFAULT 1 CHECK(board_public IN (0, 1)),
+    questionnaire_version TEXT NOT NULL DEFAULT 'bloom-1',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS survey_responses (
+    id TEXT PRIMARY KEY,
+    survey_id TEXT NOT NULL REFERENCES surveys(id) ON DELETE CASCADE,
+    visitor_id TEXT REFERENCES visitors(id) ON DELETE SET NULL,
+    user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+    is_owner INTEGER NOT NULL DEFAULT 0 CHECK(is_owner IN (0, 1)),
+    respondent_name TEXT NOT NULL,
+    relation TEXT NOT NULL,
+    result_type TEXT NOT NULL,
+    submitted_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(survey_id, visitor_id)
+  );
+
+  CREATE TABLE IF NOT EXISTS survey_answers (
+    response_id TEXT NOT NULL REFERENCES survey_responses(id) ON DELETE CASCADE,
+    question_id INTEGER NOT NULL,
+    value INTEGER NOT NULL CHECK(value BETWEEN 0 AND 5),
+    PRIMARY KEY(response_id, question_id)
+  );
+
   CREATE INDEX IF NOT EXISTS idx_participants_room ON participants(room_id);
   CREATE INDEX IF NOT EXISTS idx_assessments_room ON assessments(room_id);
   CREATE INDEX IF NOT EXISTS idx_answers_assessment ON answers(assessment_id);
+  CREATE INDEX IF NOT EXISTS idx_user_sessions_user ON user_sessions(user_id);
+  CREATE INDEX IF NOT EXISTS idx_visitors_user ON visitors(user_id);
+  CREATE INDEX IF NOT EXISTS idx_responses_survey ON survey_responses(survey_id);
+  CREATE INDEX IF NOT EXISTS idx_responses_user ON survey_responses(user_id);
 `;
 
 const SQLITE_SCHEMA_SQL = SCHEMA_SQL.replaceAll("TIMESTAMPTZ", "TEXT");

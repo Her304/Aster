@@ -14,6 +14,24 @@ A private, account-free reflection room where friends compare how they see one a
 - Responsive landing, lobby, dashboard, survey, waiting, and results experiences
 - English, Traditional Chinese, Japanese, and Korean interface and survey copy
 
+## Open surveys
+
+Besides private circles, anyone can start an open survey at `/bloom` and share
+one link (`/s/<code>`):
+
+- The person who starts it signs in with a six-digit code sent by email; no password.
+- Anyone with the link answers 16 questions about them with just a name and how
+  they know them. A per-browser cookie remembers that they answered, so they can
+  return for the updated ranking; signing in later attaches their answers to
+  their account.
+- Respondents see the ranking, without names, once three people have answered.
+- The initiator sees who answered, a private report (letters, question-by-question
+  gaps from five answers, view by relationship from eight), and can copy a
+  prompt for another AI that contains no names.
+
+Sign-in email needs `RESEND_API_KEY` and `EMAIL_FROM` (see `.env.example`). In
+local development without them, codes are printed to the server console.
+
 ## Run locally
 
 ```bash

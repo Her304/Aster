@@ -30,3 +30,15 @@ export function isRateLimited(key: string, limit: number, windowMs = 60_000) {
 export function clientKey(request: Request) {
   return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
 }
+
+/** Rejects state-changing requests sent from another site's page. */
+export function isCrossSite(request: Request) {
+  const origin = request.headers.get("origin");
+  if (!origin) return false;
+  const host = request.headers.get("x-forwarded-host") || request.headers.get("host");
+  try {
+    return new URL(origin).host !== host;
+  } catch {
+    return true;
+  }
+}
