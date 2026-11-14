@@ -1,5 +1,4 @@
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
+import { ASTER_MARK_DATA_URL } from "@/images/aster-mark-data";
 
 /**
  * Shared pieces for the generated share images. ImageResponse only reads TTF,
@@ -63,11 +62,6 @@ export async function shareFonts(serifText: string, sansText: string): Promise<F
   return (await Promise.all(loads)).filter((font): font is FontEntry => font !== null);
 }
 
-let markCache: Promise<string> | undefined;
-
-export function asterMark() {
-  markCache ??= readFile(join(process.cwd(), "src/images/aster-mark.png")).then(
-    (data) => `data:image/png;base64,${data.toString("base64")}`,
-  );
-  return markCache;
+export async function asterMark() {
+  return ASTER_MARK_DATA_URL;
 }

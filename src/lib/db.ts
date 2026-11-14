@@ -2,8 +2,7 @@ import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import type { DatabaseSync } from "node:sqlite";
-import { neonConfig, Pool, type PoolClient } from "@neondatabase/serverless";
-import WebSocket from "ws";
+import { Client, neon } from "@neondatabase/serverless";
 import { QUESTION_BANK } from "@/data/questions";
 
 type SqlValue = string | number | null;
@@ -152,7 +151,8 @@ const ADDED_COLUMNS: Array<{ table: string; column: string; definition: string }
   { table: "surveys", column: "notified_level", definition: "INTEGER NOT NULL DEFAULT 0" },
   { table: "surveys", column: "locale", definition: "TEXT NOT NULL DEFAULT 'en'" },
 ];
-const usesPostgres = Boolean(process.env.DATABASE_URL);
+// Read per call: on Cloudflare the environment is bound to the request, not the module.
+const usesPostgres = () => Boolean(process.env.DATABASE_URL);
 
 function toPostgresSql(sql: string) {
   let parameter = 0;
@@ -186,6 +186,9 @@ let sqliteTransactionTail: Promise<void> = Promise.resolve();
 
 async function getSqliteDatabase() {
   if (sqliteDatabase) return sqliteDatabase;
+  if (typeof navigator !== "undefined" && navigator.userAgent === "Cloudflare-Workers") {
+    throw new Error("DATABASE_URL is not set. Cloudflare Workers can't use the local SQLite fallback; add DATABASE_URL as a secret.");
+  }
   const { DatabaseSync: SqliteDatabase } = await import("node:sqlite");
   const dataDirectory = join(process.cwd(), "data");
   mkdirSync(dataDirectory, { recursive: true });
@@ -219,22 +222,35 @@ const sqliteExecutor: DbExecutor = {
   },
 };
 
-neonConfig.webSocketConstructor = WebSocket;
-
-let postgresPool: Pool | undefined;
-
-function getPostgresPool() {
-  if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required for Postgres persistence.");
-  postgresPool ??= new Pool({
-    connectionString: process.env.DATABASE_URL,
-    max: 2,
-    idleTimeoutMillis: 10_000,
-    connectionTimeoutMillis: 10_000,
-  });
-  return postgresPool;
+function databaseUrl() {
+  const url = process.env.DATABASE_URL;
+  if (!url) throw new Error("DATABASE_URL is required for Postgres persistence.");
+  return url;
 }
 
-function postgresExecutor(client: Pool | PoolClient): DbExecutor {
+/**
+ * Connections are never shared between requests: Cloudflare Workers forbids
+ * reusing a socket opened by another request. Single statements go over
+ * Neon's stateless HTTP endpoint; transactions open their own WebSocket
+ * client and close it when done. Both work the same on Node and Vercel.
+ */
+function postgresHttpExecutor(): DbExecutor {
+  const sql = neon(databaseUrl(), { fullResults: true });
+  return {
+    dialect: "postgres",
+    async all<T>(text: string, params: SqlValue[] = []) {
+      return (await sql.query(toPostgresSql(text), params)).rows as T[];
+    },
+    async get<T>(text: string, params: SqlValue[] = []) {
+      return (await sql.query(toPostgresSql(text), params)).rows[0] as T | undefined;
+    },
+    async run(text: string, params: SqlValue[] = []) {
+      return { changes: (await sql.query(toPostgresSql(text), params)).rowCount || 0 };
+    },
+  };
+}
+
+function postgresClientExecutor(client: Client): DbExecutor {
   return {
     dialect: "postgres",
     async all<T>(sql: string, params: SqlValue[] = []) {
@@ -253,25 +269,25 @@ function postgresExecutor(client: Pool | PoolClient): DbExecutor {
 }
 
 async function rawPostgresTransaction<T>(work: (executor: DbExecutor) => Promise<T>) {
-  const pool = getPostgresPool();
-  const client = await pool.connect();
+  const client = new Client({ connectionString: databaseUrl() });
+  await client.connect();
   try {
     await client.query("BEGIN");
-    const result = await work(postgresExecutor(client));
+    const result = await work(postgresClientExecutor(client));
     await client.query("COMMIT");
     return result;
   } catch (error) {
     await client.query("ROLLBACK").catch(() => undefined);
     throw error;
   } finally {
-    client.release();
+    await client.end().catch(() => undefined);
   }
 }
 
 let initialization: Promise<void> | undefined;
 
 async function initializeDatabase() {
-  if (usesPostgres) {
+  if (usesPostgres()) {
     await rawPostgresTransaction(async (executor) => {
       await executor.run("SELECT pg_advisory_xact_lock(hashtext(?))", ["aster-schema-v1"]);
       await executor.run(SCHEMA_SQL);
@@ -318,7 +334,7 @@ async function ready() {
 }
 
 function rootExecutor() {
-  return usesPostgres ? postgresExecutor(getPostgresPool()) : sqliteExecutor;
+  return usesPostgres() ? postgresHttpExecutor() : sqliteExecutor;
 }
 
 export async function queryAll<T>(sql: string, params: SqlValue[] = []) {
@@ -338,7 +354,7 @@ export async function execute(sql: string, params: SqlValue[] = []) {
 
 export async function transaction<T>(work: (executor: DbExecutor) => Promise<T>) {
   await ready();
-  if (usesPostgres) return rawPostgresTransaction(work);
+  if (usesPostgres()) return rawPostgresTransaction(work);
 
   let release: () => void = () => undefined;
   const previous = sqliteTransactionTail;

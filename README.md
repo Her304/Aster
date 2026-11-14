@@ -49,17 +49,32 @@ npm run dev
 
 Open http://localhost:3000. Data is stored locally in `data/aster.db` using SQLite.
 
-## Deploy with durable storage
+## Deploy to Cloudflare Workers
 
-Aster automatically uses Neon Postgres whenever `DATABASE_URL` is set and keeps
-SQLite as the zero-configuration local fallback. On its first database request,
-the server creates the relational schema and idempotently seeds the versioned
-200-question bank.
+Aster runs on Cloudflare Workers through the OpenNext adapter
+(`@opennextjs/cloudflare`), configured in `wrangler.jsonc` and
+`open-next.config.ts`. Workers have no filesystem, so production needs Neon
+Postgres: set `DATABASE_URL`, and the server creates the schema and seeds the
+question bank on its first database request.
 
-For Vercel, connect a Neon database from the Storage marketplace, ensure the
-generated `DATABASE_URL` is available to Production and Preview, then deploy.
-Do not deploy the SQLite fallback to a serverless host because its filesystem is
-ephemeral.
+In the Cloudflare dashboard, open the Worker, then **Settings → Build**:
+
+| Setting | Value |
+| --- | --- |
+| Build command | `npx opennextjs-cloudflare build` |
+| Deploy command | `npx opennextjs-cloudflare deploy` |
+| Non-production branch deploy command | `npx opennextjs-cloudflare upload` |
+
+The Worker's name must match `name` in `wrangler.jsonc` (`aster`). Under
+**Settings → Variables and Secrets**, add `DATABASE_URL` and, for email,
+`RESEND_API_KEY` and `EMAIL_FROM` as secrets.
+
+From a terminal, `npm run cf:preview` runs the Worker build locally in the
+Workers runtime and `npm run cf:deploy` deploys it.
+
+Aster still runs on any Node host (`npm run build && npm start`), using Neon
+when `DATABASE_URL` is set and local SQLite otherwise. Do not deploy the SQLite
+fallback to a serverless host: its filesystem is ephemeral.
 
 ## Checks
 
