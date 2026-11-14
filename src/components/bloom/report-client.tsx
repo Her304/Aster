@@ -7,7 +7,7 @@ import { BLOOM_QUESTIONS, THRESHOLDS, type BloomReport } from "@/lib/bloom";
 import { useBloomCopy } from "@/lib/bloom-i18n";
 import { answerLabel, buildAiPrompt, notableGaps } from "@/lib/bloom-prompt";
 import { I18nProvider, translateQuestion, useI18n, type TranslationKey } from "@/lib/i18n";
-import { ApiError, BloomHeader, BoardView, api, useErrorText } from "./shared";
+import { ApiError, BadgeList, BloomHeader, BoardView, api, useErrorText } from "./shared";
 
 const axisTitles: Record<string, TranslationKey> = {
   EI: "results.social",
@@ -75,6 +75,13 @@ function ReportContent() {
           <section className="bloom-card"><p className="muted">{b("r.empty")}</p></section>
         ) : (
           <>
+            {report.badges.length > 0 && (
+              <section className="bloom-card">
+                <h2 className="card-title">{b("r.badges")}</h2>
+                <BadgeList badges={report.badges} />
+              </section>
+            )}
+
             <section className="bloom-card">
               <h2 className="card-title">{b("r.lettersTitle")}</h2>
               <ul className="reading-list">

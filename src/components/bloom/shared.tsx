@@ -8,6 +8,7 @@ import {
   BLOOM_LENGTH,
   BLOOM_QUESTIONS,
   undecidedAxes,
+  type Badge,
   type Board,
   type BloomAnswers,
   type Tiebreaks,
@@ -247,5 +248,19 @@ export function BoardView({
       </ul>
       {showMajorityNote && <p className="board-note">{b("board.majorityNote", { type: board.majorityType! })}</p>}
     </div>
+  );
+}
+
+export function BadgeList({ badges }: { badges: readonly Badge[] }) {
+  const b = useBloomCopy();
+  return (
+    <ul className="badge-list">
+      {badges.map((badge) => (
+        <li key={badge}>
+          <strong>{b(`badge.${badge}`)}</strong>
+          <span>{b(`badgeBody.${badge}`)}</span>
+        </li>
+      ))}
+    </ul>
   );
 }

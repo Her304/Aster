@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { createVisitor, currentUser, currentVisitor, visitorCookie } from "@/lib/accounts";
 import { THRESHOLDS, isRelation, parseAnswers, parseTiebreaks, scoreBloom } from "@/lib/bloom";
-import { findOwnResponse, getSurveyByCode, insertResponse, isoTime, surveyBoard } from "@/lib/bloom-data";
+import { findOwnResponse, getSurveyByCode, insertResponse, isoTime, notifyMilestone, surveyBoard } from "@/lib/bloom-data";
 import { transaction } from "@/lib/db";
 import { cleanNickname, clientKey, error, isCrossSite, isRateLimited } from "@/lib/http";
 
@@ -85,6 +85,10 @@ export async function POST(request: Request, { params }: Params) {
     });
   });
 
+  if (!duplicate) {
+    const origin = new URL(request.url).origin;
+    after(() => notifyMilestone(survey.id, origin).catch((caught) => console.error("[aster] milestone email failed", caught)));
+  }
   const response = duplicate
     ? error("You’ve already answered this survey.", 409)
     : NextResponse.json({ type: scored.type });

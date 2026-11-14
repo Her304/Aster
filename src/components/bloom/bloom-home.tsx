@@ -7,13 +7,14 @@ import {
   THRESHOLDS,
   isPersonalityType,
   scoreBloom,
+  type Badge,
   type Board,
   type BloomAnswers,
   type Tiebreaks,
 } from "@/lib/bloom";
 import { useBloomCopy, type BloomKey } from "@/lib/bloom-i18n";
 import { I18nProvider, useI18n } from "@/lib/i18n";
-import { BloomHeader, BoardView, Questionnaire, TypePicker, api, useErrorText } from "./shared";
+import { BadgeList, BloomHeader, BoardView, Questionnaire, TypePicker, api, useErrorText } from "./shared";
 
 interface Me {
   user: { email: string } | null;
@@ -28,10 +29,12 @@ interface Dashboard {
     selfType: string;
     status: "open" | "closed";
     boardPublic: boolean;
+    notify: boolean;
     createdAt: string;
     selfAnswered: boolean;
   } | null;
   board?: Board;
+  badges?: Badge[];
   responses?: Array<{ id: string; name: string; relation: string; type: string; signedIn: boolean; submittedAt: string }>;
 }
 
@@ -96,12 +99,14 @@ function BloomHomeContent() {
 }
 
 function Setup({ signedIn, onCreated }: { signedIn: boolean; onCreated: () => Promise<void> }) {
+  const { locale } = useI18n();
   const b = useBloomCopy();
   const errorText = useErrorText();
   const [stage, setStage] = useState<"form" | "selfTest" | "signin" | "signinOnly">("form");
   const [displayName, setDisplayName] = useState("");
   const [selfType, setSelfType] = useState("");
   const [selfTest, setSelfTest] = useState<SelfTest | null>(null);
+  const [notify, setNotify] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -121,6 +126,8 @@ function Setup({ signedIn, onCreated }: { signedIn: boolean; onCreated: () => Pr
           selfType,
           selfAnswers: selfTest?.answers ?? null,
           selfTiebreaks: selfTest?.tiebreaks ?? null,
+          notify,
+          locale,
         }),
       });
       await onCreated();
@@ -194,6 +201,10 @@ function Setup({ signedIn, onCreated }: { signedIn: boolean; onCreated: () => Pr
             {b("setup.unsure")}
           </button>
         )}
+        <label className="toggle-row">
+          <input type="checkbox" checked={notify} onChange={(event) => setNotify(event.target.checked)} />
+          <span>{b("setup.notify")}</span>
+        </label>
         {error && <p className="form-error">{error}</p>}
         <button className="button primary wide" disabled={!ready || busy}>{b("setup.continue")} <ArrowIcon /></button>
         {!signedIn && <button type="button" className="text-button centered-button" onClick={() => setStage("signinOnly")}>{b("setup.signIn")}</button>}
@@ -288,6 +299,7 @@ function SignInPanel({ title, onSignedIn, onBack }: { title: string; onSignedIn:
 }
 
 function DashboardView({ data, reload }: { data: Dashboard; reload: () => Promise<void> }) {
+  const { locale } = useI18n();
   const b = useBloomCopy();
   const errorText = useErrorText();
   const survey = data.survey!;
@@ -379,6 +391,15 @@ function DashboardView({ data, reload }: { data: Dashboard; reload: () => Promis
         <Link className="button ink-outline" href="/bloom/report">{b("dash.openReport")} <ArrowIcon /></Link>
       </section>
 
+      {data.badges && data.badges.length > 0 && (
+        <section className="bloom-card">
+          <h2 className="card-title">{b("dash.badges")}</h2>
+          <BadgeList badges={data.badges} />
+        </section>
+      )}
+
+      <ResultCard total={total} locale={locale} />
+
       <section className="bloom-card">
         <h2 className="card-title">{b("dash.boardTitle")}</h2>
         {data.board && <BoardView board={data.board} ownerName={survey.displayName} selfType={survey.selfType} />}
@@ -435,6 +456,10 @@ function DashboardView({ data, reload }: { data: Dashboard; reload: () => Promis
           <span>{b("dash.open")}</span>
         </label>
         <label className="toggle-row">
+          <input type="checkbox" checked={survey.notify} onChange={(event) => patch({ notify: event.target.checked, locale })} />
+          <span>{b("dash.notify")}</span>
+        </label>
+        <label className="toggle-row">
           <input type="checkbox" checked={survey.boardPublic} onChange={(event) => patch({ boardPublic: event.target.checked })} />
           <span>{b("dash.boardPublic")}</span>
         </label>
@@ -467,5 +492,67 @@ function DashboardView({ data, reload }: { data: Dashboard; reload: () => Promis
       {error && <p className="form-error centered">{error}</p>}
       {notice && <div className="toast"><CheckIcon />{notice}</div>}
     </>
+  );
+}
+
+/** The story-sized result card, rendered by the server without anyone's names. */
+function ResultCard({ total, locale }: { total: number; locale: string }) {
+  const b = useBloomCopy();
+  const errorText = useErrorText();
+  const [error, setError] = useState("");
+  // Changes with the answer count so the preview never shows a stale card.
+  const src = `/api/bloom/card?locale=${locale}&n=${total}`;
+
+  async function cardFile() {
+    const response = await fetch(src);
+    if (!response.ok) throw new Error((await response.json().catch(() => ({}))).error || "Something went wrong. Please try again.");
+    return new File([await response.blob()], "aster-result.png", { type: "image/png" });
+  }
+
+  async function share() {
+    setError("");
+    try {
+      const file = await cardFile();
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file] }).catch(() => undefined);
+        return;
+      }
+      download(file);
+    } catch (caught) {
+      setError(errorText(caught));
+    }
+  }
+
+  function download(file: File) {
+    const url = URL.createObjectURL(file);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = file.name;
+    link.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  return (
+    <section className="bloom-card result-card">
+      <h2 className="card-title">{b("dash.cardTitle")}</h2>
+      {total < THRESHOLDS.board ? (
+        <p className="muted">{b("dash.cardLocked", { threshold: THRESHOLDS.board })}</p>
+      ) : (
+        <>
+          <p>{b("dash.cardBody")}</p>
+          <img className="card-preview" src={src} alt="" width={1080} height={1920} />
+          <div className="inline-actions">
+            <button className="button primary" onClick={share}>{b("dash.cardShare")} <ArrowIcon /></button>
+            <button
+              className="button secondary"
+              onClick={() => cardFile().then(download).catch((caught) => setError(errorText(caught)))}
+            >
+              {b("dash.cardDownload")}
+            </button>
+          </div>
+          {error && <p className="form-error">{error}</p>}
+        </>
+      )}
+    </section>
   );
 }

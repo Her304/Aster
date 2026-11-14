@@ -1,7 +1,9 @@
 import { randomUUID } from "node:crypto";
-import { queryAll, queryOne, type DbExecutor } from "@/lib/db";
+import { execute, queryAll, queryOne, type DbExecutor } from "@/lib/db";
+import { mailLocale, sendMilestone } from "@/lib/mailer";
 import {
   BLOOM_QUESTION_IDS,
+  THRESHOLDS,
   buildBoard,
   buildReport,
   isRelation,
@@ -17,6 +19,9 @@ export interface SurveyRow {
   self_type: string;
   status: "open" | "closed";
   board_public: number;
+  notify: number;
+  notified_level: number;
+  locale: string;
   created_at: string | Date;
 }
 
@@ -140,4 +145,26 @@ export async function insertResponse(
     entries.flatMap(([questionId, value]) => [id, Number(questionId), value]),
   );
   return id;
+}
+
+/**
+ * Emails the initiator, if they opted in, when an answer opens the ranking
+ * (3), the question-by-question comparison (5) or the view by relationship
+ * (8). Each level is claimed with a conditional update, so concurrent answers
+ * send it once; removing answers later never sends it again.
+ */
+export async function notifyMilestone(surveyId: string, origin: string) {
+  const row = await queryOne<{ notify: number; notified_level: number | string; locale: string; email: string; total: number | string }>(
+    `SELECT s.notify, s.notified_level, s.locale, u.email,
+       (SELECT COUNT(*) FROM survey_responses r WHERE r.survey_id = s.id AND r.is_owner = 0) AS total
+     FROM surveys s JOIN users u ON u.id = s.owner_id WHERE s.id = ?`,
+    [surveyId],
+  );
+  if (!row || !Number(row.notify)) return;
+  const total = Number(row.total);
+  const level = [THRESHOLDS.audiences, THRESHOLDS.behaviours, THRESHOLDS.board].find((threshold) => total >= threshold);
+  if (!level || level <= Number(row.notified_level)) return;
+  const { changes } = await execute("UPDATE surveys SET notified_level = ? WHERE id = ? AND notified_level < ?", [level, surveyId, level]);
+  if (!changes) return;
+  await sendMilestone(row.email, level, total, `${origin}/bloom/report`, mailLocale(row.locale));
 }

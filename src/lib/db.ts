@@ -109,6 +109,9 @@ const SCHEMA_SQL = `
     status TEXT NOT NULL DEFAULT 'open' CHECK(status IN ('open', 'closed')),
     board_public INTEGER NOT NULL DEFAULT 1 CHECK(board_public IN (0, 1)),
     questionnaire_version TEXT NOT NULL DEFAULT 'bloom-1',
+    notify INTEGER NOT NULL DEFAULT 0 CHECK(notify IN (0, 1)),
+    notified_level INTEGER NOT NULL DEFAULT 0,
+    locale TEXT NOT NULL DEFAULT 'en',
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
 
@@ -142,6 +145,13 @@ const SCHEMA_SQL = `
 `;
 
 const SQLITE_SCHEMA_SQL = SCHEMA_SQL.replaceAll("TIMESTAMPTZ", "TEXT");
+
+/** Columns added after a table first shipped; CREATE TABLE IF NOT EXISTS won't add them to an existing table. */
+const ADDED_COLUMNS: Array<{ table: string; column: string; definition: string }> = [
+  { table: "surveys", column: "notify", definition: "INTEGER NOT NULL DEFAULT 0" },
+  { table: "surveys", column: "notified_level", definition: "INTEGER NOT NULL DEFAULT 0" },
+  { table: "surveys", column: "locale", definition: "TEXT NOT NULL DEFAULT 'en'" },
+];
 const usesPostgres = Boolean(process.env.DATABASE_URL);
 
 function toPostgresSql(sql: string) {
@@ -185,6 +195,12 @@ async function getSqliteDatabase() {
   database.exec("PRAGMA foreign_keys = ON;");
   database.exec("PRAGMA journal_mode = WAL;");
   database.exec(SQLITE_SCHEMA_SQL);
+  for (const { table, column, definition } of ADDED_COLUMNS) {
+    const columns = database.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>;
+    if (!columns.some((existing) => existing.name === column)) {
+      database.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+    }
+  }
   sqliteDatabase = database;
   return database;
 }
@@ -259,6 +275,9 @@ async function initializeDatabase() {
     await rawPostgresTransaction(async (executor) => {
       await executor.run("SELECT pg_advisory_xact_lock(hashtext(?))", ["aster-schema-v1"]);
       await executor.run(SCHEMA_SQL);
+      for (const { table, column, definition } of ADDED_COLUMNS) {
+        await executor.run(`ALTER TABLE ${table} ADD COLUMN IF NOT EXISTS ${column} ${definition}`);
+      }
       const seeded = await executor.get<{ value: string }>("SELECT value FROM aster_meta WHERE key = ?", [
         "question-bank-aster-1",
       ]);

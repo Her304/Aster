@@ -29,8 +29,16 @@ one link (`/s/<code>`):
   gaps from five answers, view by relationship from eight), and can copy a
   prompt for another AI that contains no names.
 
-Sign-in email needs `RESEND_API_KEY` and `EMAIL_FROM` (see `.env.example`). In
-local development without them, codes are printed to the server console.
+- Gap badges (such as "Undercover introvert" or "Chameleon") name the shape of
+  the difference, and the initiator can share a story-sized result card.
+- Each survey link has its own preview image when pasted into a chat.
+- Initiators can opt in to an email when the ranking (3 answers), the
+  question-by-question comparison (5) and the view by relationship (8) open.
+
+Sign-in and notification email needs `RESEND_API_KEY` and `EMAIL_FROM` (see
+`.env.example`). In local development without them, emails and codes are
+printed to the server console. Share images fetch their fonts from Google Fonts
+when generated.
 
 ## Run locally
 

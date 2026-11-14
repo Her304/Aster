@@ -208,11 +208,53 @@ export interface AudienceGroup {
   majorityType: string | null;
 }
 
+export const BADGES = [
+  "open-book",
+  "chameleon",
+  "undercover-introvert",
+  "quiet-extravert",
+  "grounded-dreamer",
+  "secret-visionary",
+  "soft-centre",
+  "warmer-than-you-think",
+  "accidental-planner",
+  "easygoing-planner",
+] as const;
+export type Badge = (typeof BADGES)[number];
+
+/** Keyed "your letter>the letter others agree on". */
+const OUTSIDE_BADGES: Record<string, Badge> = {
+  "I>E": "undercover-introvert",
+  "E>I": "quiet-extravert",
+  "N>S": "grounded-dreamer",
+  "S>N": "secret-visionary",
+  "F>T": "soft-centre",
+  "T>F": "warmer-than-you-think",
+  "P>J": "accidental-planner",
+  "J>P": "easygoing-planner",
+};
+
+/**
+ * Names for the shape of the gap, from the same readings as the report:
+ * "open book" when every axis agrees, one badge per shared outside view, and
+ * "chameleon" when people are divided on two or more axes.
+ */
+export function gapBadges(axes: readonly AxisReading[], total: number): Badge[] {
+  if (total < THRESHOLDS.board) return [];
+  if (axes.every((axis) => axis.pattern === "agree")) return ["open-book"];
+  const badges = axes
+    .filter((axis) => axis.pattern === "outside")
+    .map((axis) => OUTSIDE_BADGES[`${axis.selfLetter}>${axis.majority}`]);
+  if (axes.filter((axis) => axis.pattern === "split").length >= 2) badges.push("chameleon");
+  return badges;
+}
+
 export interface BloomReport {
   total: number;
   selfType: string;
   board: Board;
   axes: AxisReading[];
+  badges: Badge[];
   behaviours:
     | { status: "locked"; needed: number }
     | { status: "needs-self" }
@@ -220,15 +262,10 @@ export interface BloomReport {
   audiences: { status: "locked"; needed: number } | { status: "ready"; groups: AudienceGroup[] };
 }
 
-export function buildReport(
-  selfType: string,
-  selfAnswers: BloomAnswers | null,
-  responses: readonly ReportResponse[],
-): BloomReport {
-  const total = responses.length;
-  const board = buildBoard(responses.map((response) => response.type));
-
-  const axes = board.letters.map((split, index): AxisReading => {
+/** How the initiator's own letter on each axis compares with everyone else's answers. */
+export function readAxes(selfType: string, board: Board): AxisReading[] {
+  const total = board.total;
+  return board.letters.map((split, index): AxisReading => {
     const selfLetter = selfType[index] as PreferenceLetter;
     const majorityCount = Math.max(split.first.count, split.second.count);
     const otherCount = Math.min(split.first.count, split.second.count);
@@ -242,6 +279,17 @@ export function buildReport(
       pattern: consensus ? (split.majority === selfLetter ? "agree" : "outside") : "split",
     };
   });
+}
+
+export function buildReport(
+  selfType: string,
+  selfAnswers: BloomAnswers | null,
+  responses: readonly ReportResponse[],
+): BloomReport {
+  const total = responses.length;
+  const board = buildBoard(responses.map((response) => response.type));
+
+  const axes = readAxes(selfType, board);
 
   let behaviours: BloomReport["behaviours"];
   if (total < THRESHOLDS.behaviours) {
@@ -279,5 +327,5 @@ export function buildReport(
     audiences = { status: "ready", groups };
   }
 
-  return { total, selfType, board, axes, behaviours, audiences };
+  return { total, selfType, board, axes, badges: gapBadges(axes, total), behaviours, audiences };
 }

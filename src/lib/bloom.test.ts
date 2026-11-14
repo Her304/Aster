@@ -5,7 +5,9 @@ import {
   THRESHOLDS,
   buildBoard,
   buildReport,
+  gapBadges,
   matchingLetters,
+  readAxes,
   parseAnswers,
   scoreBloom,
   undecidedAxes,
@@ -114,6 +116,23 @@ describe("report", () => {
     if (report.behaviours.status !== "ready") throw new Error("expected ready");
     const first = report.behaviours.items[0];
     expect(Math.abs(first.gap!)).toBeGreaterThanOrEqual(Math.abs(report.behaviours.items.at(-1)!.gap ?? 0));
+  });
+});
+
+describe("gap badges", () => {
+  const axesFor = (self: string, types: string[]) => readAxes(self, buildBoard(types));
+
+  it("waits for the ranking threshold", () => {
+    expect(gapBadges(axesFor("ENFP", ["ENFP", "ENFP"]), 2)).toEqual([]);
+  });
+
+  it("names a perfect match an open book", () => {
+    expect(gapBadges(axesFor("ENFP", ["ENFP", "ENFP", "ENFP"]), 3)).toEqual(["open-book"]);
+  });
+
+  it("names each shared outside view and a divided reading", () => {
+    const types = ["ESTJ", "ESFP", "ESTP", "ENFJ", "ESTJ"];
+    expect(gapBadges(axesFor("INTJ", types), types.length)).toEqual(["undercover-introvert", "grounded-dreamer", "chameleon"]);
   });
 });
 

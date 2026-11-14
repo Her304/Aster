@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { currentUser } from "@/lib/accounts";
-import { isPersonalityType, parseAnswers, parseTiebreaks, scoreBloom } from "@/lib/bloom";
+import { gapBadges, isPersonalityType, parseAnswers, parseTiebreaks, readAxes, scoreBloom } from "@/lib/bloom";
 import {
   getSurveyByOwner,
   insertResponse,
@@ -13,6 +13,7 @@ import {
 } from "@/lib/bloom-data";
 import { execute, transaction } from "@/lib/db";
 import { cleanNickname, error, isCrossSite } from "@/lib/http";
+import { mailLocale } from "@/lib/mailer";
 
 export const runtime = "nodejs";
 
@@ -34,10 +35,12 @@ export async function GET() {
       selfType: survey.self_type,
       status: survey.status,
       boardPublic: Boolean(survey.board_public),
+      notify: Boolean(survey.notify),
       createdAt: isoTime(survey.created_at),
       selfAnswered: Boolean(self),
     },
     board,
+    badges: gapBadges(readAxes(survey.self_type, board), board.total),
     responses: responses.map((response) => ({
       id: response.id,
       name: response.respondent_name,
@@ -76,8 +79,8 @@ export async function POST(request: Request) {
     while (await database.get("SELECT 1 FROM surveys WHERE code = ?", [code])) code = surveyCode();
     const surveyId = randomUUID();
     await database.run(
-      "INSERT INTO surveys (id, code, owner_id, display_name, self_type) VALUES (?, ?, ?, ?, ?)",
-      [surveyId, code, user.id, displayName, body.selfType],
+      "INSERT INTO surveys (id, code, owner_id, display_name, self_type, notify, locale) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      [surveyId, code, user.id, displayName, body.selfType, body.notify ? 1 : 0, mailLocale(body.locale)],
     );
     if (selfAnswers) {
       await insertResponse(database, {
@@ -110,6 +113,9 @@ export async function PATCH(request: Request) {
   }
   if (body.boardPublic !== undefined) {
     await execute("UPDATE surveys SET board_public = ? WHERE id = ?", [body.boardPublic ? 1 : 0, survey.id]);
+  }
+  if (body.notify !== undefined) {
+    await execute("UPDATE surveys SET notify = ?, locale = ? WHERE id = ?", [body.notify ? 1 : 0, mailLocale(body.locale), survey.id]);
   }
   if (body.selfType !== undefined) {
     if (!isPersonalityType(body.selfType)) return error("Pick one letter on each of the four axes.");
