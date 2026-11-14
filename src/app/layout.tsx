@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Caveat } from "next/font/google";
+import { Caveat, Noto_Sans_HK, Noto_Serif_TC } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
 
@@ -12,11 +12,10 @@ const handwriting = Caveat({
   display: "swap",
 });
 
-// Next's Google catalogue exposes no korean/chinese-traditional subset for
-// these families, and the full faces are 1.2 MB and 3.3 MB. The handwriting
-// variable is only ever used for static landing copy, so these are subset to
-// exactly the glyphs that copy needs. preload is off: a reader only fetches
-// the face for the language they are actually reading.
+// Next's Google catalogue exposes no korean subset for Nanum Pen Script, and the
+// full face is 1.2 MB. The handwriting variable is only ever used for static
+// landing copy, so it is subset to exactly the glyphs that copy needs.
+// preload is off: only Korean readers fetch it.
 const koreanHand = localFont({
   src: "../fonts/nanum-pen-ko-subset.woff2",
   variable: "--font-hand-ko",
@@ -24,9 +23,20 @@ const koreanHand = localFont({
   preload: false,
 });
 
-const chineseHand = localFont({
-  src: "../fonts/lxgw-wenkai-zh-hant-subset.woff2",
-  variable: "--font-hand-zh",
+// Traditional Chinese: Noto Serif TC for headings, Noto Sans HK for everything
+// else. Google serves both in numbered unicode-range slices, which next/font
+// self-hosts at build time; a browser downloads only the slices holding the
+// characters on screen, and only when a Chinese page uses them.
+const chineseSerif = Noto_Serif_TC({
+  weight: ["500", "700"],
+  variable: "--font-zh-serif",
+  display: "swap",
+  preload: false,
+});
+
+const chineseSans = Noto_Sans_HK({
+  weight: "variable",
+  variable: "--font-zh-sans",
   display: "swap",
   preload: false,
 });
@@ -38,7 +48,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${handwriting.variable} ${koreanHand.variable} ${chineseHand.variable}`}>
+    <html lang="en" className={`${handwriting.variable} ${koreanHand.variable} ${chineseSerif.variable} ${chineseSans.variable}`}>
       <body>{children}</body>
     </html>
   );
