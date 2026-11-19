@@ -9,6 +9,14 @@
 		"directory": ".open-next/assets",
 		"binding": "ASSETS"
 	},
+	"services": [
+		{
+			// Self-reference service binding, the service name must match the worker name
+			// see https://opennext.js.org/cloudflare/caching
+			"binding": "WORKER_SELF_REFERENCE",
+			"service": "aster"
+		}
+	],
 	// Next.js image optimisation through Cloudflare Images.
 	"images": {
 		"binding": "IMAGES"
@@ -16,6 +24,10 @@
 	// Lets non-production branches deploy as Worker Previews.
 	"previews": {},
 	"observability": {
-		"enabled": true
+		"logs": {
+			"enabled": true,
+			"invocation_logs": true,
+			"persist": true
+		}
 	}
 }

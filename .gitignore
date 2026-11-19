@@ -6,8 +6,13 @@ data/*.db-*
 npm-debug.log*
 *.tsbuildinfo
 
-# Cloudflare / OpenNext build output
+# OpenNext
 .open-next
+
+# wrangler files
 .wrangler
 .dev.vars*
 !.dev.vars.example
+.vercel
+.env*
+backups/
