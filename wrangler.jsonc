@@ -1,12 +1,10 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"main": ".open-next/worker.js",
+	// Must match the Worker's name in the Cloudflare dashboard.
 	"name": "aster",
-	"compatibility_date": "2026-09-22",
-	"compatibility_flags": [
-		"nodejs_compat",
-		"global_fetch_strictly_public"
-	],
+	"main": ".open-next/worker.js",
+	"compatibility_date": "2026-11-13",
+	"compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
 	"assets": {
 		"directory": ".open-next/assets",
 		"binding": "ASSETS"
@@ -19,9 +17,17 @@
 			"service": "aster"
 		}
 	],
+	// Next.js image optimisation through Cloudflare Images.
 	"images": {
-		// Enable image optimization
-		// see https://opennext.js.org/cloudflare/howtos/image
 		"binding": "IMAGES"
+	},
+	// Lets non-production branches deploy as Worker Previews.
+	"previews": {},
+	"observability": {
+		"logs": {
+			"enabled": true,
+			"invocation_logs": true,
+			"persist": true
+		}
 	}
 }
