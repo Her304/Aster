@@ -201,6 +201,17 @@ export interface BehaviourItem {
   gap: number | null;
 }
 
+/** A question the respondents split on, with everyone's answers combined. */
+export interface ControversyItem {
+  questionId: number;
+  agree: number;
+  neutral: number;
+  disagree: number;
+  unsure: number;
+  /** The initiator's own answer, 1–5 or 0 for "not sure"; null when they haven't answered about themselves. */
+  selfValue: number | null;
+}
+
 export interface AudienceGroup {
   relation: Relation;
   count: number;
@@ -274,19 +285,21 @@ export function responseSimilarity(selfType: string, answers: BloomAnswers): num
 }
 
 /**
- * Above 90%: globe amaranth, the "unfading" flower of constancy.
- * Above 80%: blue iris, faith and trust.
- * Below 20%: hydrangea, whose colour changes with its soil.
- * Below 30%: iris, the rainbow's messenger.
- * Anything between earns no flower.
+ * Every respondent earns one flower, by how closely their view matches the
+ * initiator's own:
+ * 84–100%: globe amaranth, the "unfading" flower of constancy.
+ * 50–83%: blue iris, faith and trust.
+ * 25–49%: iris, the rainbow's messenger.
+ * 0–24%: hydrangea, whose colour changes with its soil.
  */
+export function flowerFor(score: number): Flower;
+export function flowerFor(score: number | null): Flower | null;
 export function flowerFor(score: number | null): Flower | null {
   if (score === null) return null;
-  if (score > 90) return "globe-amaranth";
-  if (score > 80) return "blue-iris";
-  if (score < 20) return "hydrangea";
-  if (score < 30) return "iris";
-  return null;
+  if (score >= 84) return "globe-amaranth";
+  if (score >= 50) return "blue-iris";
+  if (score >= 25) return "iris";
+  return "hydrangea";
 }
 
 export interface BloomReport {
@@ -295,6 +308,10 @@ export interface BloomReport {
   board: Board;
   axes: AxisReading[];
   badges: Badge[];
+  /** How many respondents earned each flower. */
+  flowers: Record<Flower, number>;
+  /** The three questions respondents disagreed on most, once individual answers may be combined. */
+  controversies: { status: "locked"; needed: number } | { status: "ready"; items: ControversyItem[] };
   behaviours:
     | { status: "locked"; needed: number }
     | { status: "needs-self" }
@@ -319,6 +336,41 @@ export function readAxes(selfType: string, board: Board): AxisReading[] {
       pattern: consensus ? (split.majority === selfLetter ? "agree" : "outside") : "split",
     };
   });
+}
+
+/**
+ * The questions respondents split on most: the widest spread of their 1–5
+ * answers ("not sure" left out), then the closest balance of agree and
+ * disagree. Questions everyone answered alike are never listed.
+ */
+export function mostDivided(responses: readonly ReportResponse[], selfAnswers: BloomAnswers | null, limit = 3): ControversyItem[] {
+  return BLOOM_QUESTIONS.map((question, order) => {
+    const values = responses.map((response) => response.answers[question.id] ?? 0);
+    const valid = values.filter((value) => value >= 1);
+    const mean = valid.length ? valid.reduce((sum, value) => sum + value, 0) / valid.length : 0;
+    const spread = valid.length >= 2 ? Math.sqrt(valid.reduce((sum, value) => sum + (value - mean) ** 2, 0) / valid.length) : 0;
+    const agree = values.filter((value) => value >= 4).length;
+    const disagree = values.filter((value) => value === 1 || value === 2).length;
+    return {
+      order,
+      spread,
+      item: {
+        questionId: question.id,
+        agree,
+        neutral: values.filter((value) => value === 3).length,
+        disagree,
+        unsure: values.filter((value) => value === 0).length,
+        selfValue: selfAnswers ? (selfAnswers[question.id] ?? 0) : null,
+      },
+    };
+  })
+    .filter((entry) => entry.spread > 1e-9)
+    .sort((a, b) =>
+      b.spread - a.spread ||
+      Math.abs(a.item.agree - a.item.disagree) - Math.abs(b.item.agree - b.item.disagree) ||
+      a.order - b.order)
+    .slice(0, limit)
+    .map((entry) => entry.item);
 }
 
 export function buildReport(
@@ -367,5 +419,12 @@ export function buildReport(
     audiences = { status: "ready", groups };
   }
 
-  return { total, selfType, board, axes, badges: gapBadges(axes, total), behaviours, audiences };
+  const flowers = Object.fromEntries(FLOWERS.map((flower) => [flower, 0])) as Record<Flower, number>;
+  for (const response of responses) flowers[flowerFor(responseSimilarity(selfType, response.answers))] += 1;
+
+  const controversies: BloomReport["controversies"] = total < THRESHOLDS.behaviours
+    ? { status: "locked", needed: THRESHOLDS.behaviours - total }
+    : { status: "ready", items: mostDivided(responses, selfAnswers) };
+
+  return { total, selfType, board, axes, badges: gapBadges(axes, total), flowers, controversies, behaviours, audiences };
 }

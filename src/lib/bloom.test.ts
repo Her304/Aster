@@ -10,6 +10,7 @@ import {
   matchingLetters,
   readAxes,
   parseAnswers,
+  mostDivided,
   responseSimilarity,
   scoreBloom,
   undecidedAxes,
@@ -150,19 +151,26 @@ describe("flower achievements", () => {
     expect(responseSimilarity("ENFP", Object.fromEntries(BLOOM_QUESTION_IDS.map((id) => [id, 0])))).toBe(50);
   });
 
-  it("gives a flower only at either end of the range", () => {
+  it("gives every respondent one of four flowers", () => {
     expect(flowerFor(null)).toBeNull();
     expect(flowerFor(100)).toBe("globe-amaranth");
-    expect(flowerFor(91)).toBe("globe-amaranth");
-    expect(flowerFor(90)).toBe("blue-iris");
-    expect(flowerFor(81)).toBe("blue-iris");
-    expect(flowerFor(80)).toBeNull();
-    expect(flowerFor(50)).toBeNull();
-    expect(flowerFor(30)).toBeNull();
-    expect(flowerFor(29)).toBe("iris");
-    expect(flowerFor(20)).toBe("iris");
-    expect(flowerFor(19)).toBe("hydrangea");
+    expect(flowerFor(84)).toBe("globe-amaranth");
+    expect(flowerFor(83)).toBe("blue-iris");
+    expect(flowerFor(50)).toBe("blue-iris");
+    expect(flowerFor(49)).toBe("iris");
+    expect(flowerFor(25)).toBe("iris");
+    expect(flowerFor(24)).toBe("hydrangea");
     expect(flowerFor(0)).toBe("hydrangea");
+  });
+
+  it("counts the flowers respondents earned on the report", () => {
+    const report = buildReport("ENFP", null, [
+      { relation: "family", type: "ENFP", answers: answersFor("ENFP") },
+      { relation: "family", type: "ENFP", answers: answersFor("ENFP") },
+      { relation: "colleague", type: "ENTJ", answers: answersFor("ENTJ") },
+      { relation: "colleague", type: "ISTJ", answers: answersFor("ISTJ") },
+    ]);
+    expect(report.flowers).toEqual({ "globe-amaranth": 2, "blue-iris": 1, iris: 0, hydrangea: 1 });
   });
 
   it("names and explains every flower in every language", () => {
@@ -174,7 +182,53 @@ describe("flower achievements", () => {
   });
 });
 
+describe("most divided questions", () => {
+  const split = (agreeing: number, disagreeing: number) => [
+    ...Array.from({ length: agreeing }, () => ({ relation: "family" as const, type: "ENFP", answers: answersFor("ENFP") })),
+    ...Array.from({ length: disagreeing }, () => ({ relation: "family" as const, type: "ISTJ", answers: answersFor("ISTJ") })),
+  ];
+
+  it("stays locked until individual answers may be combined", () => {
+    expect(buildReport("ENFP", null, split(2, 2)).controversies).toEqual({ status: "locked", needed: THRESHOLDS.behaviours - 4 });
+  });
+
+  it("lists at most three questions, with counts and the initiator's own answer", () => {
+    const report = buildReport("ENFP", answersFor("ENFP"), split(3, 2));
+    expect(report.controversies.status).toBe("ready");
+    if (report.controversies.status !== "ready") return;
+    expect(report.controversies.items).toHaveLength(3);
+    for (const item of report.controversies.items) {
+      expect(item.agree + item.neutral + item.disagree + item.unsure).toBe(5);
+      expect(item.agree).toBeGreaterThan(0);
+      expect(item.disagree).toBeGreaterThan(0);
+      expect(item.selfValue).not.toBeNull();
+    }
+  });
+
+  it("puts the most evenly split question first and never lists unanimous ones", () => {
+    const responses = split(5, 0);
+    // One question split 3 to 2, another 4 to 1; everything else unanimous.
+    // Questions 1 (E) and 76 (N) are answered 5 by an ENFP view.
+    responses[0].answers = { ...responses[0].answers, 1: 1, 76: 1 };
+    responses[1].answers = { ...responses[1].answers, 1: 1 };
+    const items = mostDivided(responses, null);
+    expect(items.map((item) => item.questionId)).toEqual([1, 76]);
+    expect(items[0].selfValue).toBeNull();
+  });
+});
+
 describe("AI prompt", () => {
+  it("states the most divided questions with their counts", () => {
+    const report = buildReport("ENFP", null, [
+      ...Array.from({ length: 3 }, () => ({ relation: "family" as const, type: "ENFP", answers: answersFor("ENFP") })),
+      ...Array.from({ length: 2 }, () => ({ relation: "family" as const, type: "ISTJ", answers: answersFor("ISTJ") })),
+    ]);
+    const prompt = buildAiPrompt(report, "en");
+    expect(prompt).toContain("The questions friends disagreed with each other on most:");
+    expect(prompt.match(/^- “.*” — friends: \d agree, \d neither, \d disagree, \d not sure\.$/gm)).toHaveLength(3);
+    expect(buildAiPrompt(buildReport("ENFP", null, []), "en")).not.toContain("disagreed with each other");
+  });
+
   it("carries counts but no names, in every language", () => {
     const named = buildReport("ENFP", answersFor("INFP"), [
       { relation: "colleague", type: "ENTJ", answers: answersFor("ENTJ") },

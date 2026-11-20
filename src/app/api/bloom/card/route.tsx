@@ -1,15 +1,24 @@
 import { ImageResponse } from "next/og";
 import { currentUser } from "@/lib/accounts";
-import { THRESHOLDS } from "@/lib/bloom";
+import { FLOWERS, THRESHOLDS } from "@/lib/bloom";
 import { getSurveyByOwner, surveyReport } from "@/lib/bloom-data";
 import { bloomText } from "@/lib/bloom-i18n";
 import { error } from "@/lib/http";
 import { asterMark, fontStacks, palette, shareFonts } from "@/lib/share-image";
 import type { Locale } from "@/lib/i18n";
+import { FLOWER_CARD_ART } from "@/images/flower-card-data";
 
 export const runtime = "nodejs";
 
 const size = { width: 1080, height: 1920 };
+
+/** Where the flowers people earned are painted, largest (most earned) first. */
+const FLOWER_SLOTS = [
+  { right: -70, bottom: 170, width: 600, opacity: 0.55, rotate: -4 },
+  { right: -40, top: 140, width: 410, opacity: 0.5, rotate: 6 },
+  { right: 40, top: 640, width: 300, opacity: 0.45, rotate: -3 },
+  { right: -30, top: 1010, width: 250, opacity: 0.35, rotate: 5 },
+] as const;
 
 function locale(value: string | null): Locale {
   return value === "zh-Hant" || value === "ja" || value === "ko" ? value : "en";
@@ -17,7 +26,8 @@ function locale(value: string | null): Locale {
 
 /**
  * The initiator's story-sized result card: their own type, the most-chosen
- * type, the letter splits and their gap badges. It carries no respondent names.
+ * type, the letter splits and their gap badges, painted over the flowers
+ * respondents earned. It carries no respondent names.
  */
 export async function GET(request: Request) {
   const user = await currentUser();
@@ -38,6 +48,8 @@ export async function GET(request: Request) {
   const ask = text("card.ask");
   const link = `${url.host}/s/${survey.code}`;
   const letters = report.board.letters;
+  const earned = FLOWERS.filter((flower) => report.flowers[flower] > 0)
+    .sort((a, b) => report.flowers[b] - report.flowers[a] || FLOWERS.indexOf(a) - FLOWERS.indexOf(b));
 
   const { serifStack, sansStack } = fontStacks(`${report.selfType}${topTypes.join("")}${ask}` + `Aster${said}${friendsSaid}${badges.join("")}${link}EISNTFJP0123456789·`);
   const [mark, fonts] = await Promise.all([
@@ -47,7 +59,23 @@ export async function GET(request: Request) {
 
   return new ImageResponse(
     (
-      <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", background: palette.paper, padding: "96px 88px", fontFamily: sansStack, wordBreak: "keep-all", color: palette.ink }}>
+      <div style={{ position: "relative", width: "100%", height: "100%", display: "flex", flexDirection: "column", background: palette.paper, padding: "96px 88px", fontFamily: sansStack, wordBreak: "keep-all", color: palette.ink }}>
+        {earned.map((flower, index) => {
+          const slot = FLOWER_SLOTS[index];
+          const art = FLOWER_CARD_ART[flower];
+          const height = Math.round((slot.width * art.height) / art.width);
+          const place = "top" in slot ? { top: slot.top } : { bottom: slot.bottom };
+          return (
+            <img
+              key={flower}
+              src={art.src}
+              width={slot.width}
+              height={height}
+              alt=""
+              style={{ position: "absolute", right: slot.right, ...place, opacity: slot.opacity, transform: `rotate(${slot.rotate}deg)` }}
+            />
+          );
+        })}
         <div style={{ display: "flex", alignItems: "center", gap: 18, fontSize: 40 }}>
           <img src={mark} width={68} height={68} alt="" />
           Aster

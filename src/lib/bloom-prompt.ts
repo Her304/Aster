@@ -60,6 +60,21 @@ export function buildAiPrompt(report: BloomReport, locale: Locale) {
     }
   }
 
+  if (report.controversies.status === "ready" && report.controversies.items.length) {
+    lines.push("", text("p.controversies"));
+    for (const item of report.controversies.items) {
+      const question = BLOOM_QUESTIONS.find((candidate) => candidate.id === item.questionId)!;
+      const line = text("p.controversyItem", {
+        question: translateQuestion(question.id, question.text, "", true, locale),
+        agree: item.agree,
+        neutral: item.neutral,
+        disagree: item.disagree,
+        unsure: item.unsure,
+      });
+      lines.push(`- ${line}${item.selfValue === null ? "" : ` ${text("p.controversySelf", { self: answerLabel(locale, item.selfValue) })}`}`);
+    }
+  }
+
   if (report.audiences.status === "ready" && report.audiences.groups.length) {
     lines.push(
       "",
