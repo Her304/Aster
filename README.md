@@ -34,7 +34,7 @@ one link (`/s/<code>`):
 - Each survey link has its own preview image when pasted into a chat.
 - Once ten people have answered, every respondent earns a watercolour flower
   by how closely their answers match the initiator's own type: globe amaranth
-  (84–100%), blue iris (50–83%), iris (25–49%) or hydrangea (0–24%).
+  (84–100%), blue hyacinth (50–83%), iris (25–49%) or hydrangea (0–24%).
   Respondents see their flower and its meaning in the language of flowers;
   the initiator sees each respondent's flower beside their name, a guide to
   all four with how many earned each, and the flowers painted behind the

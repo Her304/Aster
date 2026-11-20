@@ -156,8 +156,8 @@ describe("flower achievements", () => {
     expect(flowerFor(null)).toBeNull();
     expect(flowerFor(100)).toBe("globe-amaranth");
     expect(flowerFor(84)).toBe("globe-amaranth");
-    expect(flowerFor(83)).toBe("blue-iris");
-    expect(flowerFor(50)).toBe("blue-iris");
+    expect(flowerFor(83)).toBe("blue-hyacinth");
+    expect(flowerFor(50)).toBe("blue-hyacinth");
     expect(flowerFor(49)).toBe("iris");
     expect(flowerFor(25)).toBe("iris");
     expect(flowerFor(24)).toBe("hydrangea");
@@ -172,7 +172,7 @@ describe("flower achievements", () => {
     ];
     expect(THRESHOLDS.flowers).toBe(10);
     expect(buildReport("ENFP", null, responses.slice(0, 9)).flowers).toBeNull();
-    expect(buildReport("ENFP", null, responses).flowers).toEqual({ "globe-amaranth": 5, "blue-iris": 3, iris: 0, hydrangea: 2 });
+    expect(buildReport("ENFP", null, responses).flowers).toEqual({ "globe-amaranth": 5, "blue-hyacinth": 3, iris: 0, hydrangea: 2 });
   });
 
   it("covers every percentage with exactly one band", () => {
@@ -185,7 +185,7 @@ describe("flower achievements", () => {
 
   it("names and explains every flower in every language", () => {
     for (const table of Object.values(bloomTranslations)) {
-      for (const flower of ["globe-amaranth", "blue-iris", "iris", "hydrangea"]) {
+      for (const flower of ["globe-amaranth", "blue-hyacinth", "iris", "hydrangea"]) {
         for (const part of ["name", "meaning", "body"]) expect(table[`flower.${part}.${flower}` as keyof typeof table]).toBeTruthy();
         expect(table[`flowerGuide.${flower}` as keyof typeof table]).toBeTruthy();
       }

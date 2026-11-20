@@ -20,7 +20,7 @@ import {
 import { useBloomCopy, type BloomKey } from "@/lib/bloom-i18n";
 import { translateQuestion, useI18n, type TranslationKey } from "@/lib/i18n";
 import type { Dimension } from "@/lib/scoring";
-import blueIris from "@/images/flowers/blue-iris.webp";
+import blueHyacinth from "@/images/flowers/blue-hyacinth.webp";
 import globeAmaranth from "@/images/flowers/globe-amaranth.webp";
 import hydrangea from "@/images/flowers/hydrangea.webp";
 import iris from "@/images/flowers/iris.webp";
@@ -276,7 +276,7 @@ export function BadgeList({ badges }: { badges: readonly Badge[] }) {
 
 const flowerPaintings: Record<Flower, StaticImageData> = {
   "globe-amaranth": globeAmaranth,
-  "blue-iris": blueIris,
+  "blue-hyacinth": blueHyacinth,
   iris,
   hydrangea,
 };

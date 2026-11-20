@@ -265,7 +265,7 @@ export function gapBadges(axes: readonly AxisReading[], total: number): Badge[] 
  * the initiator matches the initiator's own. Only the two ends of the range
  * earn a flower.
  */
-export const FLOWERS = ["globe-amaranth", "blue-iris", "iris", "hydrangea"] as const;
+export const FLOWERS = ["globe-amaranth", "blue-hyacinth", "iris", "hydrangea"] as const;
 export type Flower = (typeof FLOWERS)[number];
 
 /**
@@ -288,14 +288,14 @@ export function responseSimilarity(selfType: string, answers: BloomAnswers): num
  * Every respondent earns one flower, by how closely their view matches the
  * initiator's own:
  * 84–100%: globe amaranth, the "unfading" flower of constancy.
- * 50–83%: blue iris, faith and trust.
+ * 50–83%: blue hyacinth, constancy and sincerity.
  * 25–49%: iris, the rainbow's messenger.
  * 0–24%: hydrangea, whose colour changes with its soil.
  */
 /** The similarity range, in whole percentages, that earns each flower. */
 export const FLOWER_BANDS: Readonly<Record<Flower, readonly [number, number]>> = {
   "globe-amaranth": [84, 100],
-  "blue-iris": [50, 83],
+  "blue-hyacinth": [50, 83],
   iris: [25, 49],
   hydrangea: [0, 24],
 };
