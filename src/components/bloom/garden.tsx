@@ -1,9 +1,10 @@
 "use client";
 
 import Image, { type StaticImageData } from "next/image";
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import type { Flower } from "@/lib/bloom";
 import { useBloomCopy, type BloomKey } from "@/lib/bloom-i18n";
+import { plantingOrder, plotSize, seed } from "@/lib/garden";
 import aster01 from "@/images/garden/aster-01.webp";
 import aster02 from "@/images/garden/aster-02.webp";
 import aster03 from "@/images/garden/aster-03.webp";
@@ -30,27 +31,44 @@ export interface GardenPlant {
   flower: Flower | null;
 }
 
-/** A stable number from a response id, so each person keeps the same aster and pose. */
-function seed(id: string) {
-  let hash = 2166136261;
-  for (let index = 0; index < id.length; index += 1) {
-    hash ^= id.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-  return hash >>> 0;
-}
+/*
+ * Isometric geometry, in SVG units. A tile is 2U wide and U tall; the plot
+ * is SIZE × SIZE tiles with room above for the flowers and soil below.
+ */
+const U = 40;
+const HEADROOM = 1.8 * U;
+const SOIL = 0.75 * U;
+const MARGIN = 0.45 * U;
+const FLOWER_WIDTH = 1.3 * U;
 
 /**
- * The initiator's garden: one painted aster for every person who has
- * answered, planted in the order they answered. Choosing a flower opens a
- * small note above it with that person's name and the type they chose.
+ * The initiator's garden: a small isometric plot where every person who has
+ * answered plants one painted aster. Choosing a flower opens a note above it
+ * with that person's name and the type they chose.
  */
 export function Garden({ plants }: { plants: readonly GardenPlant[] }) {
   const b = useBloomCopy();
   const [openId, setOpenId] = useState<string | null>(null);
-  const bedRef = useRef<HTMLUListElement>(null);
-  const bubbleRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLElement>(null);
+  const noteRef = useRef<HTMLDivElement>(null);
   const [shift, setShift] = useState(0);
+
+  const size = plotSize(plants.length);
+  const width = 2 * size * U + 2 * MARGIN;
+  const height = HEADROOM + size * U + SOIL + 0.3 * U;
+  const centre = (row: number, col: number) => ({
+    x: MARGIN + (col - row + size) * U,
+    y: HEADROOM + ((col + row + 1) * U) / 2,
+  });
+
+  const placed = useMemo(() => {
+    const order = plantingOrder(plotSize(plants.length));
+    return plants.map((plant, index) => {
+      const [row, col] = order[index];
+      return { plant, row, col, value: seed(plant.id) };
+    });
+  }, [plants]);
+  const taken = new Set(placed.map(({ row, col }) => `${row}:${col}`));
 
   useEffect(() => {
     if (!openId) return;
@@ -72,67 +90,140 @@ export function Garden({ plants }: { plants: readonly GardenPlant[] }) {
     if (openId && !plants.some((plant) => plant.id === openId)) setOpenId(null);
   }, [openId, plants]);
 
-  // Keep the note inside the garden when its flower stands near an edge.
+  // Keep the note inside the card when its flower stands near an edge.
   useLayoutEffect(() => {
     setShift(0);
     if (!openId) return;
     const frame = window.requestAnimationFrame(() => {
-      const bed = bedRef.current?.getBoundingClientRect();
-      const bubble = bubbleRef.current?.getBoundingClientRect();
-      if (!bed || !bubble) return;
-      if (bubble.left < bed.left) setShift(bed.left - bubble.left);
-      else if (bubble.right > bed.right) setShift(bed.right - bubble.right);
+      const card = cardRef.current?.getBoundingClientRect();
+      const note = noteRef.current?.getBoundingClientRect();
+      if (!card || !note) return;
+      const inset = 12;
+      if (note.left < card.left + inset) setShift(card.left + inset - note.left);
+      else if (note.right > card.right - inset) setShift(card.right - inset - note.right);
     });
     return () => window.cancelAnimationFrame(frame);
   }, [openId]);
 
+  const top = { x: MARGIN + size * U, y: HEADROOM };
+  const right = { x: MARGIN + 2 * size * U, y: HEADROOM + (size * U) / 2 };
+  const bottom = { x: MARGIN + size * U, y: HEADROOM + size * U };
+  const left = { x: MARGIN, y: HEADROOM + (size * U) / 2 };
+  const point = (p: { x: number; y: number }, dy = 0) => `${p.x},${p.y + dy}`;
+  const turf = 0.24 * U;
+  const fringe = (from: { x: number; y: number }, to: { x: number; y: number }) => {
+    const steps = size * 6;
+    const points: string[] = [];
+    for (let step = steps; step >= 0; step -= 1) {
+      const t = step / steps;
+      const dip = step % 2 === 0 ? turf : turf * 0.55;
+      points.push(`${from.x + (to.x - from.x) * t},${from.y + (to.y - from.y) * t + dip}`);
+    }
+    return points.join(" ");
+  };
+
   return (
-    <section className="bloom-card garden-card">
+    <section className="bloom-card garden-card" ref={cardRef}>
       <div className="garden-heading">
         <h2 className="card-title">{b("garden.title")}</h2>
         <p>{plants.length ? b("garden.body") : b("garden.empty")}</p>
       </div>
-      <ul className={`garden-bed${plants.length ? "" : " empty"}`} ref={bedRef}>
-        {plants.map((plant, index) => {
-          const value = seed(plant.id);
-          const open = openId === plant.id;
-          const bubbleId = `plant-note-${plant.id}`;
-          const style = {
-            "--tilt": `${((value % 11) - 5) * 0.9}deg`,
-            "--scale": 0.86 + ((value >> 4) % 7) * 0.035,
-            "--lift": `${(value >> 8) % 12}px`,
-            "--delay": `${Math.min(index, 20) * 45}ms`,
-          } as CSSProperties;
-          return (
-            <li key={plant.id} className={`plant${open ? " open" : ""}`} style={style}>
-              <button
-                type="button"
-                aria-label={b("garden.label", { name: plant.name })}
-                aria-expanded={open}
-                aria-controls={open ? bubbleId : undefined}
-                onClick={() => setOpenId(open ? null : plant.id)}
-              >
-                <Image src={ASTERS[value % ASTERS.length]} alt="" sizes="96px" draggable={false} />
-              </button>
-              {open && (
-                <div
-                  className="plant-note"
-                  id={bubbleId}
-                  role="status"
-                  ref={bubbleRef}
-                  style={{ "--shift": `${shift}px` } as CSSProperties}
+      <div className="garden-plot" style={{ aspectRatio: `${width} / ${height}`, maxWidth: `${size * 118}px` }}>
+        <svg viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
+          <defs>
+            <filter id="garden-wash" x="-5%" y="-5%" width="110%" height="110%">
+              <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="7" />
+              <feDisplacementMap in="SourceGraphic" scale="3" />
+            </filter>
+            <linearGradient id="garden-soil-left" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="#c9a681" />
+              <stop offset="1" stopColor="#b38f6b" />
+            </linearGradient>
+            <linearGradient id="garden-soil-right" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="#b3906c" />
+              <stop offset="1" stopColor="#9c7957" />
+            </linearGradient>
+          </defs>
+          <ellipse cx={bottom.x} cy={bottom.y + SOIL - 0.1 * U} rx={size * U * 0.9} ry={0.28 * U} fill="rgba(30,55,41,0.08)" />
+          <g filter="url(#garden-wash)">
+            <polygon points={[point(left), point(bottom), point(bottom, SOIL), point(left, SOIL)].join(" ")} fill="url(#garden-soil-left)" />
+            <polygon points={[point(bottom), point(right), point(right, SOIL), point(bottom, SOIL)].join(" ")} fill="url(#garden-soil-right)" />
+            <polygon points={`${point(left)} ${point(bottom)} ${fringe(left, bottom)}`} fill="#a7bf86" />
+            <polygon points={`${point(bottom)} ${point(right)} ${fringe(bottom, right)}`} fill="#98b179" />
+            <polygon points={[point(top), point(right), point(bottom), point(left)].join(" ")} fill="#c6d6a6" />
+            {Array.from({ length: size * size }, (_, index) => {
+              const row = Math.floor(index / size);
+              const col = index % size;
+              const { x, y } = centre(row, col);
+              return (
+                <polygon
+                  key={index}
+                  points={`${x},${y - U / 2} ${x + U},${y} ${x},${y + U / 2} ${x - U},${y}`}
+                  fill={(row + col) % 2 ? "#bfd19c" : "#cddcb0"}
+                  stroke="rgba(255,255,255,0.35)"
+                  strokeWidth="1"
+                />
+              );
+            })}
+          </g>
+          {Array.from({ length: size * size }, (_, index) => {
+            const row = Math.floor(index / size);
+            const col = index % size;
+            if (taken.has(`${row}:${col}`) || seed(`tuft:${row}:${col}`) % 3 !== 0) return null;
+            const { x, y } = centre(row, col);
+            const dx = ((seed(`dx:${row}:${col}`) % 9) - 4) * 2;
+            return (
+              <g key={`tuft-${index}`} stroke="#86a466" strokeWidth="2" strokeLinecap="round" fill="none" opacity="0.8">
+                <path d={`M${x + dx - 5},${y + 3} q-1,-7 -4,-10`} />
+                <path d={`M${x + dx},${y + 4} q0,-8 1,-13`} />
+                <path d={`M${x + dx + 5},${y + 3} q1,-6 5,-9`} />
+              </g>
+            );
+          })}
+          {placed.map(({ plant, row, col }) => {
+            const { x, y } = centre(row, col);
+            return <ellipse key={`shade-${plant.id}`} cx={x} cy={y + 2} rx={0.42 * U} ry={0.16 * U} fill="rgba(60,85,45,0.22)" />;
+          })}
+        </svg>
+        <ul className="garden-plants">
+          {placed.map(({ plant, row, col, value }, index) => {
+            const { x, y } = centre(row, col);
+            const jitter = ((value >> 12) % 7) - 3;
+            const open = openId === plant.id;
+            const noteId = `plant-note-${plant.id}`;
+            const style = {
+              left: `${((x + jitter) / width) * 100}%`,
+              top: `${((y + 0.25 * U) / height) * 100}%`,
+              width: `${((FLOWER_WIDTH * (0.9 + ((value >> 4) % 5) * 0.05)) / width) * 100}%`,
+              zIndex: open ? 100 : row + col + 1,
+              "--tilt": `${((value % 9) - 4) * 1.1}deg`,
+              "--delay": `${Math.min(index, 24) * 45}ms`,
+            } as CSSProperties;
+            return (
+              <li key={plant.id} className={`plant${open ? " open" : ""}`} style={style}>
+                <button
+                  type="button"
+                  aria-label={b("garden.label", { name: plant.name })}
+                  aria-expanded={open}
+                  aria-controls={open ? noteId : undefined}
+                  onClick={() => setOpenId(open ? null : plant.id)}
                 >
-                  <strong>{plant.name}</strong>
-                  <small>{b(`rel.${plant.relation}` as BloomKey)}</small>
-                  <span className="plant-sees">{b("garden.sees")}</span>
-                  <b>{plant.type}</b>
-                  {plant.flower && <span className="flower-tag">{b(`flower.name.${plant.flower}`)}</span>}
-                </div>
-              )}
-            </li>
-          );
-        })}
-      </ul>
+                  <Image src={ASTERS[value % ASTERS.length]} alt="" sizes="120px" draggable={false} />
+                </button>
+                {open && (
+                  <div className="plant-note" id={noteId} role="status" ref={noteRef} style={{ "--shift": `${shift}px` } as CSSProperties}>
+                    <strong>{plant.name}</strong>
+                    <small>{b(`rel.${plant.relation}` as BloomKey)}</small>
+                    <span className="plant-sees">{b("garden.sees")}</span>
+                    <b>{plant.type}</b>
+                    {plant.flower && <span className="flower-tag">{b(`flower.name.${plant.flower}`)}</span>}
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </div>
     </section>
   );
 }

@@ -630,12 +630,19 @@ a { color: inherit; }
 .flower-tag { justify-self: start; padding: 2px 9px; border-radius: 999px; background: rgba(150,120,200,0.14); color: var(--ink-soft); font-size: 12px; font-weight: 700; }
 .garden-heading { display: grid; gap: 6px; }
 .garden-heading p { margin: 0; color: var(--ink-soft); line-height: 1.55; }
-.garden-bed { --row: 132px; list-style: none; margin: 8px 0 0; padding: 0 4px; display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); grid-auto-rows: var(--row); min-height: var(--row); border-radius: 6px; background-image: linear-gradient(to bottom, rgba(199,211,183,0) 68%, rgba(199,211,183,0.5) 84%, rgba(150,176,128,0.42) 100%); background-size: 100% var(--row); }
-.plant { position: relative; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 6px; }
-.plant > button { display: block; padding: 0; border: 0; background: none; cursor: pointer; mix-blend-mode: multiply; transform-origin: 50% 100%; rotate: var(--tilt); translate: 0 calc(var(--lift) * -1); transition: scale 0.2s ease; animation: plant-grow 0.7s ease-out var(--delay) backwards; }
-.plant > button:hover, .plant.open > button { scale: 1.07; }
+.garden-plot { position: relative; width: 100%; margin: 4px auto 0; }
+.garden-plot svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.garden-plants { position: absolute; inset: 0; list-style: none; margin: 0; padding: 0; }
+.plant { position: absolute; transform: translate(-50%, -100%); pointer-events: none; }
+/* Only the painted head and stem take taps, so overlapping flowers stay reachable. */
+.plant > button::before, .plant > button::after { content: ""; position: absolute; pointer-events: auto; }
+.plant > button::before { left: 12%; right: 12%; top: 2%; height: 46%; border-radius: 50%; }
+.plant > button::after { left: 38%; right: 38%; top: 44%; bottom: 0; }
+.plant-note { pointer-events: auto; }
+.plant > button { position: relative; display: block; width: 100%; padding: 0; border: 0; background: none; cursor: pointer; transform-origin: 50% 100%; rotate: var(--tilt); transition: scale 0.2s ease; animation: plant-grow 0.7s ease-out var(--delay) backwards; }
+.plant > button:hover, .plant.open > button { scale: 1.08; }
 .plant > button:focus-visible { outline: 2px solid var(--fern); outline-offset: 2px; border-radius: 4px; }
-.plant img { display: block; width: auto; height: calc(118px * var(--scale)); user-select: none; -webkit-user-drag: none; }
+.plant img { display: block; width: 100%; height: auto; filter: drop-shadow(0 1px 1px rgba(40,60,30,0.12)); user-select: none; -webkit-user-drag: none; }
 .plant-note { position: absolute; bottom: calc(100% - 4px); left: 50%; z-index: 5; display: grid; justify-items: center; gap: 2px; width: max-content; max-width: 200px; padding: 10px 16px 12px; border: 1px solid var(--line); border-radius: 6px; background: #fffdf8; box-shadow: 0 14px 34px rgba(30,55,41,0.16); text-align: center; transform: translateX(calc(-50% + var(--shift, 0px))); animation: note-in 0.18s ease-out; }
 .plant-note::after { content: ""; position: absolute; bottom: -6px; left: calc(50% - var(--shift, 0px)); width: 10px; height: 10px; margin-left: -5px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); background: #fffdf8; transform: rotate(45deg); }
 .plant-note strong { font-family: var(--display); font-size: 18px; overflow-wrap: anywhere; }
