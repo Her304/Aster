@@ -33,8 +33,8 @@ body { margin: 0; min-width: 320px; background-color: var(--paper); background-i
 /* Traditional Chinese: Noto Serif TC (headings), Noto Sans HK (other text), Aster Hand TC (accents). */
 html[lang="zh-Hant"] { --heading: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, var(--font-zh-serif), "Noto Serif TC", serif; --display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, var(--font-zh-sans), "Noto Sans HK", sans-serif; --sans: "Avenir Next", Avenir, "Gill Sans", "Trebuchet MS", var(--font-zh-sans), "Noto Sans HK", sans-serif; --hand: var(--font-hand), var(--font-hand-zh), var(--font-zh-sans), "Noto Sans HK", sans-serif; }
 html[lang="zh-Hant"] body :is(h1, h2) { font-family: var(--heading); }
-/* Japanese: Hiragino Mincho / Yu Mincho, Hiragino Sans / Yu Gothic; Japanese accents fall to the sans. */
-html[lang="ja"] { --display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, "Hiragino Mincho ProN", "Yu Mincho", YuMincho, serif; --sans: "Avenir Next", Avenir, "Gill Sans", "Trebuchet MS", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", YuGothic, sans-serif; --hand: var(--font-hand), "Hiragino Sans", "Yu Gothic", sans-serif; }
+/* Japanese: Hiragino Mincho / Yu Mincho, Hiragino Sans / Yu Gothic, Yomogi (accents). */
+html[lang="ja"] { --display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, "Hiragino Mincho ProN", "Yu Mincho", YuMincho, serif; --sans: "Avenir Next", Avenir, "Gill Sans", "Trebuchet MS", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", YuGothic, sans-serif; --hand: var(--font-hand), var(--font-hand-ja), "Hiragino Sans", "Yu Gothic", sans-serif; }
 /* Korean: AppleMyungjo / Batang, Apple SD Gothic Neo / Malgun Gothic, Nanum Pen Script (accents). */
 html[lang="ko"] { --display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, AppleMyungjo, Batang, serif; --sans: "Avenir Next", Avenir, "Gill Sans", "Trebuchet MS", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; --hand: var(--font-hand), var(--font-hand-ko), "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; }
 html:not([lang="en"]) .hero-copy h1,

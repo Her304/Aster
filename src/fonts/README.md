@@ -14,7 +14,8 @@ punctuation. Headings use Noto Serif TC and other text Noto Sans HK, both from
 `next/font/google` in `src/app/layout.tsx`.
 
 ChenYuluoyan has no kana and no Hangul, so it is not used for Japanese or
-Korean.
+Korean. Japanese handwriting is Yomogi (SIL OFL), loaded from Google through
+`next/font` like the Noto faces, so it needs no subset here.
 
 `--hand` is only ever applied to static landing-page copy — never to nicknames
 or anything else a person types — so the files here are subset to exactly the

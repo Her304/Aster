@@ -67,15 +67,18 @@ each script's own characters use:
 | --- | --- | --- | --- |
 | English | Iowan Old Style (Palatino Linotype on Windows) | Avenir Next (Trebuchet MS / Gill Sans) | Caveat |
 | Traditional Chinese | Noto Serif TC for h1/h2, Noto Sans HK for other display text | Noto Sans HK | Aster Hand TC (subset of 辰宇落雁體 ChenYuluoyan 2.0 Thin) |
-| Japanese | Hiragino Mincho ProN (Yu Mincho) | Hiragino Sans (Yu Gothic) | Hiragino Sans (no Japanese handwriting face yet) |
+| Japanese | Hiragino Mincho ProN (Yu Mincho) | Hiragino Sans (Yu Gothic) | Yomogi |
 | Korean | AppleMyungjo (Batang) | Apple SD Gothic Neo (Malgun Gothic) | Nanum Pen Script (self-hosted subset) |
 
-Caveat, Noto Serif TC and Noto Sans HK are self-hosted through `next/font`
-(`src/app/layout.tsx`); the Chinese faces load only on Chinese pages. The
+Caveat, Yomogi, Noto Serif TC and Noto Sans HK are self-hosted through
+`next/font` (`src/app/layout.tsx`); the Chinese and Japanese faces load only on
+their own pages, and only the unicode-range slices a page actually uses. The
 Korean and Chinese handwriting subsets live in `src/fonts/` with their
 licences (see its README to regenerate them when handwritten copy changes).
-ChenYuluoyan has no kana or Hangul, so Japanese and Korean keep their own
-accent faces.
+ChenYuluoyan has no kana or Hangul, so Japanese and Korean have their own
+accent faces. Check a face's licence before adding it: it must allow web
+embedding and, if we subset it, modification and redistribution (SIL OFL does;
+Yorutegaki, for example, forbids web-font use).
 
 Scale and style:
 

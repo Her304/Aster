@@ -39,8 +39,10 @@ describe("design rules", () => {
     }
   });
 
-  it("gives Chinese its own handwriting face after Caveat", () => {
-    const hand = languageBlock("zh-Hant").match(/--hand:([^;]*)/)?.[1] ?? "";
-    expect(hand.trim()).toMatch(/^var\(--font-hand\), var\(--font-hand-zh\)/);
+  it("gives Chinese, Japanese and Korean their own handwriting face after Caveat", () => {
+    for (const [lang, face] of [["zh-Hant", "--font-hand-zh"], ["ja", "--font-hand-ja"], ["ko", "--font-hand-ko"]]) {
+      const hand = languageBlock(lang).match(/--hand:([^;]*)/)?.[1] ?? "";
+      expect(hand.trim().startsWith(`var(--font-hand), var(${face})`), `${lang}: ${hand}`).toBe(true);
+    }
   });
 });

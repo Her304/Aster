@@ -37,7 +37,7 @@ const FONTS: Record<string, Fonts> = {
   ja: {
     display: `${LATIN_SERIF},'Hiragino Mincho ProN','Yu Mincho',YuMincho,serif`,
     sans: `${LATIN_SANS},'Hiragino Sans','Hiragino Kaku Gothic ProN','Yu Gothic',YuGothic,sans-serif`,
-    hand: `Caveat,'Hiragino Sans','Yu Gothic',sans-serif`,
+    hand: `Caveat,Yomogi,'Hiragino Sans','Yu Gothic',sans-serif`,
   },
   ko: {
     display: `${LATIN_SERIF},AppleMyungjo,Batang,serif`,
@@ -82,7 +82,7 @@ function shell({ lang, title, preheader, eyebrow, heading, body, note, tagline, 
 <meta name="color-scheme" content="light only">
 <meta name="supported-color-schemes" content="light">
 <title>${escapeHtml(title)}</title>
-<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600${lang === "ja" ? "&family=Yomogi" : ""}&display=swap" rel="stylesheet">
 <style>
   @media (max-width: 600px) {
     .aster-card { padding: 30px 22px 24px !important; }
