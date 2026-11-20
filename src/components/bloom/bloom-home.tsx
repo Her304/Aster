@@ -16,7 +16,7 @@ import {
 import { useBloomCopy, type BloomKey } from "@/lib/bloom-i18n";
 import { I18nProvider, useI18n } from "@/lib/i18n";
 import { bloomSelfAnswers, clearSelfView, loadSelfView } from "@/lib/self-test";
-import { BadgeList, BloomHeader, BoardView, FlowerGuide, Questionnaire, TypePicker, api, useErrorText } from "./shared";
+import { BadgeList, BloomHeader, SIGN_IN_HREF, BoardView, FlowerGuide, Questionnaire, TypePicker, api, useErrorText } from "./shared";
 import { Garden } from "./garden";
 
 interface Me {
@@ -94,8 +94,12 @@ function BloomHomeContent() {
 
   return (
     <main className="app-shell bloom-shell">
-      <BloomHeader>
-        {me?.user && <button className="text-button" onClick={signOut}>{b("nav.signOut")}</button>}
+      <BloomHeader account={false}>
+        {me?.user ? (
+          <button className="text-button" onClick={signOut}>{b("nav.signOut")}</button>
+        ) : me ? (
+          <a className="account-link" href={SIGN_IN_HREF}>{b("nav.signIn")}</a>
+        ) : null}
       </BloomHeader>
       <div className="bloom-page">{body}</div>
     </main>
@@ -117,7 +121,15 @@ function Setup({ signedIn, onCreated }: { signedIn: boolean; onCreated: () => Pr
   const [fromHomeTest, setFromHomeTest] = useState(false);
 
   useEffect(() => {
-    const prefill = new URLSearchParams(window.location.search).get("name");
+    const params = new URLSearchParams(window.location.search);
+    // "Sign in" in the header or footer opens straight at the sign-in step.
+    if (params.has("signin")) {
+      if (!signedIn) setStage("signinOnly");
+      params.delete("signin");
+      const rest = params.toString();
+      window.history.replaceState({}, "", `/bloom${rest ? `?${rest}` : ""}`);
+    }
+    const prefill = params.get("name");
     if (prefill) setDisplayName(prefill.slice(0, 24));
     // Letters ticked, or the 80-question test taken, on the home page.
     const view = loadSelfView();

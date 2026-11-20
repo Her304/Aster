@@ -2,7 +2,8 @@
 
 import Image, { type StaticImageData } from "next/image";
 import Link from "next/link";
-import { useCallback, useState, type ReactNode } from "react";
+import { usePathname } from "next/navigation";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { ArrowIcon, BrandMark, LanguageSelect } from "@/components/ui";
 import {
   AXIS_POLES,
@@ -51,7 +52,40 @@ export function useErrorText() {
   );
 }
 
-export function BloomHeader({ children }: { children?: ReactNode }) {
+/** Where "Sign in" leads: the survey page, opened straight at the email-code sign-in. */
+export const SIGN_IN_HREF = "/bloom?signin=1";
+
+/**
+ * "Sign in" for visitors, or "My results" once signed in, so people can get
+ * back to their survey and report from any page. Hidden on /bloom itself
+ * once signed in, since that page is their results.
+ */
+export function AccountLink({ long = false }: { long?: boolean }) {
+  const b = useBloomCopy();
+  const pathname = usePathname();
+  const [signedIn, setSignedIn] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let live = true;
+    fetch("/api/auth/me")
+      .then((response) => (response.ok ? response.json() : null))
+      .then((body: { user?: unknown } | null) => live && setSignedIn(Boolean(body?.user)))
+      .catch(() => live && setSignedIn(false));
+    return () => {
+      live = false;
+    };
+  }, []);
+
+  if (signedIn === null) return null;
+  if (signedIn) {
+    if (pathname === "/bloom") return null;
+    return <Link className="account-link" href="/bloom">{b("nav.myResults")}</Link>;
+  }
+  // A full page load, so /bloom opens at the sign-in step even when already on it.
+  return <a className="account-link" href={SIGN_IN_HREF}>{long ? b("footer.signIn") : b("nav.signIn")}</a>;
+}
+
+export function BloomHeader({ children, account = true }: { children?: ReactNode; account?: boolean }) {
   const { t } = useI18n();
   return (
     <header className="app-header">
@@ -61,6 +95,7 @@ export function BloomHeader({ children }: { children?: ReactNode }) {
       </Link>
       <div className="header-actions">
         <LanguageSelect />
+        {account && <AccountLink />}
         {children}
       </div>
     </header>

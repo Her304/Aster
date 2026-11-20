@@ -8,6 +8,7 @@ import parkPicnic from "@/images/park-picnic.jpg";
 import { SURVEY_LENGTH, SURVEY_QUESTIONS } from "@/lib/survey";
 import { ArrowIcon, BrandMark, CheckIcon, LanguageSelect } from "@/components/ui";
 import { OthersInvite } from "@/components/others-invite";
+import { AccountLink } from "@/components/bloom/shared";
 import { I18nProvider, translateQuestion, useI18n, type TranslationKey } from "@/lib/i18n";
 
 type Screen = "home" | "lobby" | "dashboard" | "assessment" | "results";
@@ -572,6 +573,7 @@ function HomeScreen(props: {
         <div className="wordmark"><BrandMark small /><span>{t("common.brand")}</span></div>
         <span className="nav-note">{t("home.navNote")}</span>
         <div className="nav-cluster">
+          <AccountLink />
           <SourceLink />
           <LanguageSelect />
         </div>
@@ -657,7 +659,10 @@ function HomeScreen(props: {
           <p className="footer-note">{t("home.footerNote")}</p>
         </div>
         <p className="footer-disclaimer">{t("home.disclaimer")}</p>
-        <SourceLink />
+        <div className="footer-links">
+          <AccountLink long />
+          <SourceLink />
+        </div>
       </footer>
     </div>
   );

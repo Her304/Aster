@@ -80,6 +80,12 @@ a { color: inherit; }
 .nav-note { color: var(--fern); font-size: 12px; letter-spacing: 0.04em; }
 .language-select { height: 34px; padding: 0 28px 0 10px; border: 1px solid var(--line); border-radius: 0; background-color: rgba(255,255,255,0.35); color: var(--ink); font-size: 10px; font-weight: 700; letter-spacing: 0.04em; cursor: pointer; }
 .nav-cluster { display: flex; align-items: center; gap: 18px; }
+/* "Sign in" / "My results": back to your survey and report from any page. */
+.account-link { height: 34px; display: inline-flex; align-items: center; padding: 0 14px; border: 1px solid var(--ink); background: var(--white); color: var(--ink); font-size: 12px; font-weight: 700; white-space: nowrap; text-decoration: none; transition: background 160ms ease, color 160ms ease; }
+.account-link:hover { background: var(--ink); color: var(--white); }
+.footer-links { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.home-footer .account-link { border-color: var(--white); background: var(--white); color: var(--ink); }
+.home-footer .account-link:hover { background: var(--moss); }
 .source-link { height: 34px; display: inline-flex; align-items: center; gap: 8px; padding: 0 12px; border: 1px solid var(--line); border-radius: 0; background: rgba(255,255,255,0.35); color: var(--ink); font-size: 10px; font-weight: 700; letter-spacing: 0.04em; white-space: nowrap; text-decoration: none; transition: border-color 160ms ease, background 160ms ease; }
 .source-link:hover { border-color: var(--ink); background: var(--white); }
 .source-link .icon { width: 15px; height: 15px; }
