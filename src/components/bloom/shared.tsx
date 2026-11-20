@@ -171,11 +171,12 @@ export function Questionnaire({
   );
 }
 
-export function TypePicker({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+/** Four letter pairs to tick; `only` limits it to the pairs still to settle, keeping each pair's place in the type. */
+export function TypePicker({ value, onChange, only }: { value: string; onChange: (value: string) => void; only?: readonly Dimension[] }) {
   const b = useBloomCopy();
   return (
     <div className="type-picker" role="group" aria-label={b("setup.letters")}>
-      {(Object.keys(AXIS_POLES) as Dimension[]).map((dimension, index) => (
+      {(Object.keys(AXIS_POLES) as Dimension[]).map((dimension, index) => (only && !only.includes(dimension) ? null : (
         <div key={dimension} className="type-row">
           {AXIS_POLES[dimension].map((letter) => (
             <button
@@ -193,7 +194,7 @@ export function TypePicker({ value, onChange }: { value: string; onChange: (valu
             </button>
           ))}
         </div>
-      ))}
+      )))}
     </div>
   );
 }

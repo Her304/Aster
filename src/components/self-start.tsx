@@ -197,10 +197,7 @@ export function SelfStart() {
           {result.type ? (
             <p>{profile.closelyBalancedDimensions.length ? b("self.balanced", { dimensions: profile.closelyBalancedDimensions.join(" / ") }) : b("self.clear")}</p>
           ) : (
-            <>
-              <p>{b("self.resultNoTypeBody")}</p>
-              <TypePicker value={fill} onChange={setFill} />
-            </>
+            <p>{b("self.resultNoTypeBody")}</p>
           )}
         </div>
         <div className="dimension-list">
@@ -219,6 +216,12 @@ export function SelfStart() {
             );
           })}
         </div>
+        {!result.type && (
+          <div className="self-settle">
+            <h3>{b("q.tieSelf")}</h3>
+            <TypePicker value={fill} onChange={setFill} only={result.undecided} />
+          </div>
+        )}
         <div className="self-result-actions">
           <div>
             <button className="button primary" type="button" disabled={!type} onClick={() => type && goToBloom(type, answers)}>{b("self.ask")} <ArrowIcon /></button>
