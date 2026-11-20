@@ -3,18 +3,12 @@
 import Image, { type StaticImageData } from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import asterBouquet from "@/images/aster-bouquet.webp";
-import asterMark from "@/images/aster-mark.png";
 import friendsCircle from "@/images/friends-circle.jpg";
 import parkPicnic from "@/images/park-picnic.jpg";
 import { SURVEY_LENGTH, SURVEY_QUESTIONS } from "@/lib/survey";
-import {
-  I18nProvider,
-  localeOptions,
-  translateQuestion,
-  useI18n,
-  type Locale,
-  type TranslationKey,
-} from "@/lib/i18n";
+import { ArrowIcon, BrandMark, CheckIcon, LanguageSelect } from "@/components/ui";
+import { SelfStart } from "@/components/self-start";
+import { I18nProvider, translateQuestion, useI18n, type TranslationKey } from "@/lib/i18n";
 
 type Screen = "home" | "lobby" | "dashboard" | "assessment" | "results";
 type AssessmentStatus = "not_started" | "in_progress" | "submitted";
@@ -85,18 +79,6 @@ function initials(name: string) {
     .toUpperCase();
 }
 
-function BrandMark({ small = false }: { small?: boolean }) {
-  return (
-    <Image
-      className={small ? "brand-mark small" : "brand-mark"}
-      src={asterMark}
-      alt=""
-      sizes="58px"
-      priority
-    />
-  );
-}
-
 function BloomOrnament() {
   return (
     <svg className="brand-mark" viewBox="0 0 64 64" aria-hidden="true">
@@ -106,22 +88,6 @@ function BloomOrnament() {
         ))}
       </g>
       <circle cx="32" cy="32" r="6" fill="currentColor" />
-    </svg>
-  );
-}
-
-function ArrowIcon({ direction = "right" }: { direction?: "right" | "left" }) {
-  return (
-    <svg className={direction === "left" ? "icon flip" : "icon"} viewBox="0 0 20 20" aria-hidden="true">
-      <path d="M4 10h11M11 5l5 5-5 5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function CheckIcon() {
-  return (
-    <svg className="icon" viewBox="0 0 20 20" aria-hidden="true">
-      <path d="m4 10 4 4 8-9" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -176,22 +142,6 @@ function Snapshot({
       </span>
       <figcaption>{caption}</figcaption>
     </figure>
-  );
-}
-
-function LanguageSelect() {
-  const { locale, setLocale, t } = useI18n();
-  return (
-    <select
-      className="language-select"
-      aria-label={t("common.language")}
-      value={locale}
-      onChange={(event) => setLocale(event.target.value as Locale)}
-    >
-      {localeOptions.map((option) => (
-        <option key={option.value} value={option.value}>{option.label}</option>
-      ))}
-    </select>
   );
 }
 
@@ -682,6 +632,7 @@ function HomeScreen(props: {
           <button onClick={() => props.openDemo("revealed")} disabled={props.busy}>{t("home.sampleReveal")}</button>
         </div>
       </section>
+      <SelfStart />
       <section className="how-it-works">
         <div className="how-intro">
           <span className="eyebrow">{t("home.howEyebrow")}</span>

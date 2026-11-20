@@ -14,6 +14,32 @@ A private, account-free reflection room where friends compare how they see one a
 - Responsive landing, lobby, dashboard, survey, waiting, and results experiences
 - English, Traditional Chinese, Japanese, and Korean interface and survey copy
 
+## Open surveys
+
+Besides private circles, anyone can start an open survey at `/bloom` and share
+one link (`/s/<code>`):
+
+- The person who starts it signs in with a six-digit code sent by email; no password.
+- Anyone with the link answers 16 questions about them with just a name and how
+  they know them. A per-browser cookie remembers that they answered, so they can
+  return for the updated ranking; signing in later attaches their answers to
+  their account.
+- Respondents see the ranking, without names, once three people have answered.
+- The initiator sees who answered, a private report (letters, question-by-question
+  gaps from five answers, view by relationship from eight), and can copy a
+  prompt for another AI that contains no names.
+
+- Gap badges (such as "Undercover introvert" or "Chameleon") name the shape of
+  the difference, and the initiator can share a story-sized result card.
+- Each survey link has its own preview image when pasted into a chat.
+- Initiators can opt in to an email when the ranking (3 answers), the
+  question-by-question comparison (5) and the view by relationship (8) open.
+
+Sign-in and notification email needs `RESEND_API_KEY` and `EMAIL_FROM` (see
+`.env.example`). In local development without them, emails and codes are
+printed to the server console. Share images fetch their fonts from Google Fonts
+when generated.
+
 ## Run locally
 
 ```bash
@@ -23,14 +49,32 @@ npm run dev
 
 Open http://localhost:3000. Data is stored locally in `data/aster.db` using SQLite.
 
-## Deploy with durable storage
+## Deploy to Cloudflare Workers
 
-Aster automatically uses Neon Postgres whenever `DATABASE_URL` is set and keeps
-SQLite as the zero-configuration local fallback. On its first database request,
-the server creates the relational schema and idempotently seeds the versioned
-200-question bank.
+Aster runs on Cloudflare Workers through the OpenNext adapter
+(`@opennextjs/cloudflare`), configured in `wrangler.jsonc` and
+`open-next.config.ts`. Workers have no filesystem, so production needs Neon
+Postgres: set `DATABASE_URL`, and the server creates the schema and seeds the
+question bank on its first database request.
 
-### Cloudflare Workers (current)
+In the Cloudflare dashboard, open the Worker, then **Settings → Build**:
+
+| Setting | Value |
+| --- | --- |
+| Build command | `npx opennextjs-cloudflare build` |
+| Deploy command | `npx opennextjs-cloudflare deploy` |
+| Non-production branch deploy command | `npx opennextjs-cloudflare upload` |
+
+Do not point the build command at `npm run build`: that runs plain
+`next build`, which never produces `.open-next/worker.js`.
+
+The Worker's name must match `name` in `wrangler.jsonc` (`aster`). Under
+**Settings → Variables and Secrets**, add the pooled Neon `DATABASE_URL` (host
+contains `-pooler`) and, for email, `RESEND_API_KEY` and `EMAIL_FROM` as
+secrets. Optional analytics: set `NEXT_PUBLIC_CF_BEACON_TOKEN` at build time to
+load the Cloudflare Web Analytics beacon.
+
+From a terminal:
 
 ```bash
 cp .dev.vars.example .dev.vars   # then fill in DATABASE_URL
@@ -39,17 +83,9 @@ npm run preview                  # build + run the Worker locally
 npm run deploy                   # ship to Cloudflare
 ```
 
-Set the pooled Neon `DATABASE_URL` (host contains `-pooler`) via
-`wrangler secret put DATABASE_URL` for deployed environments. Optional analytics:
-export `NEXT_PUBLIC_CF_BEACON_TOKEN` before building to enable the Cloudflare
-Web Analytics beacon.
-
-### Vercel (legacy)
-
-Connect a Neon database from the Storage marketplace, ensure the generated
-`DATABASE_URL` is available to Production and Preview, then deploy. Do not
-deploy the SQLite fallback to a serverless host because its filesystem is
-ephemeral.
+Aster still runs on any Node host (`npm run build && npm start`), using Neon
+when `DATABASE_URL` is set and local SQLite otherwise. Do not deploy the SQLite
+fallback to a serverless host: its filesystem is ephemeral.
 
 ## Checks
 
