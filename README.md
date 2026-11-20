@@ -65,12 +65,23 @@ In the Cloudflare dashboard, open the Worker, then **Settings → Build**:
 | Deploy command | `npx opennextjs-cloudflare deploy` |
 | Non-production branch deploy command | `npx opennextjs-cloudflare upload` |
 
-The Worker's name must match `name` in `wrangler.jsonc` (`aster`). Under
-**Settings → Variables and Secrets**, add `DATABASE_URL` and, for email,
-`RESEND_API_KEY` and `EMAIL_FROM` as secrets.
+Do not point the build command at `npm run build`: that runs plain
+`next build`, which never produces `.open-next/worker.js`.
 
-From a terminal, `npm run cf:preview` runs the Worker build locally in the
-Workers runtime and `npm run cf:deploy` deploys it.
+The Worker's name must match `name` in `wrangler.jsonc` (`aster`). Under
+**Settings → Variables and Secrets**, add the pooled Neon `DATABASE_URL` (host
+contains `-pooler`) and, for email, `RESEND_API_KEY` and `EMAIL_FROM` as
+secrets. Optional analytics: set `NEXT_PUBLIC_CF_BEACON_TOKEN` at build time to
+load the Cloudflare Web Analytics beacon.
+
+From a terminal:
+
+```bash
+cp .dev.vars.example .dev.vars   # then fill in DATABASE_URL
+npx wrangler login               # one-time browser auth
+npm run preview                  # build + run the Worker locally
+npm run deploy                   # ship to Cloudflare
+```
 
 Aster still runs on any Node host (`npm run build && npm start`), using Neon
 when `DATABASE_URL` is set and local SQLite otherwise. Do not deploy the SQLite

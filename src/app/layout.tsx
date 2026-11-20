@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
 import { Caveat, Noto_Sans_HK, Noto_Serif_TC } from "next/font/google";
 import localFont from "next/font/local";
+import Script from "next/script";
 import "./globals.css";
+
+// Cloudflare Web Analytics beacon. Set NEXT_PUBLIC_CF_BEACON_TOKEN in the
+// Worker environment to enable visitor reporting; without it nothing loads.
+const cfBeaconToken = process.env.NEXT_PUBLIC_CF_BEACON_TOKEN;
 
 // Self-hosted at build time, so the handwriting survives machines that have no
 // script face of their own.
@@ -49,7 +54,17 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${handwriting.variable} ${koreanHand.variable} ${chineseSerif.variable} ${chineseSans.variable}`}>
-      <body>{children}</body>
+      <body>
+        {children}
+        {cfBeaconToken ? (
+          <Script
+            defer
+            src="https://static.cloudflareinsights.com/beacon.min.js"
+            data-cf-beacon={JSON.stringify({ token: cfBeaconToken })}
+            strategy="afterInteractive"
+          />
+        ) : null}
+      </body>
     </html>
   );
 }
