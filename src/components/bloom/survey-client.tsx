@@ -13,7 +13,6 @@ interface SurveyView {
   viewer: { isOwner: boolean; signedIn: boolean };
   total: number;
   boardThreshold: number;
-  flowerThreshold: number;
   boardPublic: boolean;
   response: { name: string; relation: string; type: string; submittedAt: string; similarity: number | null; flower: Flower | null } | null;
   selfType: string | null;
@@ -170,14 +169,7 @@ function ResultView({ view }: { view: SurveyView }) {
           <p>{matched === 4 ? b("s.resultExact", { name: ownerName, type: view.selfType }) : b("s.resultSelf", { name: ownerName, type: view.selfType, count: matched })}</p>
         )}
       </section>
-      {response.flower && response.similarity !== null ? (
-        <FlowerAchievement flower={response.flower} similarity={response.similarity} ownerName={ownerName} />
-      ) : (
-        <section className="bloom-card">
-          <span className="card-kicker">{b("flower.kicker")}</span>
-          <p>{b("s.flowerWait", { threshold: view.flowerThreshold, count: view.total })}</p>
-        </section>
-      )}
+      {response.flower && response.similarity !== null && <FlowerAchievement flower={response.flower} similarity={response.similarity} ownerName={ownerName} />}
       <section className="bloom-card">
         <h2 className="card-title">{b("s.boardTitle", { name: ownerName })}</h2>
         {view.board ? (
