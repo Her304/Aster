@@ -800,8 +800,18 @@ export const selectedQuestionIds = [
   155, 30, 80, 130, 180, 6, 56, 106, 156, 31, 81, 131, 181, 7, 57,
 ] as const;
 
+/**
+ * Thirty more prompts, translated for the 80-question self-test only: with the
+ * fifty above they give each axis twenty questions, ten per pole.
+ */
+export const selfTestExtraQuestionIds = [
+  8, 9, 10, 32, 33, 34, 35, 58, 59, 60, 82, 83, 84, 85, 107, 108, 109, 110,
+  132, 133, 134, 135, 157, 158, 159, 160, 182, 183, 184, 185,
+] as const;
+
 export type SurveyQuestionId = (typeof selectedQuestionIds)[number];
-type QuestionTable = Record<SurveyQuestionId, string>;
+export type TranslatedQuestionId = SurveyQuestionId | (typeof selfTestExtraQuestionIds)[number];
+type QuestionTable = Record<TranslatedQuestionId, string>;
 
 const zhHantQuestions: QuestionTable = {
   1: "{{subject}}會主動和陌生人攀談。",
@@ -854,6 +864,36 @@ const zhHantQuestions: QuestionTable = {
   179: "{{subject}}會同時進行多項工作。",
   180: "{{subject}}會到快出發時才決定外出細節。",
   181: "{{subject}}會接受臨時邀約。",
+  8: "{{subject}}會在冷場時接話，讓對話繼續下去。",
+  9: "{{subject}}有消息時，很快就會告訴好幾個人。",
+  10: "{{subject}}會主動去認識新來的隊友。",
+  32: "{{subject}}比起團體出遊，更喜歡一對一見面聊天。",
+  33: "{{subject}}經常聯絡的只有一小群人。",
+  34: "{{subject}}遇到意料之外的問題時，會先停頓一下再回答。",
+  35: "{{subject}}會避免成為眾人注目的焦點。",
+  58: "{{subject}}會在計畫初期就看出實際的阻礙。",
+  59: "{{subject}}會根據手邊現有的資源來做計畫。",
+  60: "{{subject}}會把新任務和過去的經驗作比較。",
+  82: "{{subject}}會先勾勒整體輪廓，再補上細節。",
+  83: "{{subject}}有好幾種做法可選時，會先腦力激盪。",
+  84: "{{subject}}會為常見的物品想出新用途。",
+  85: "{{subject}}會質疑一件事約定俗成的做法。",
+  107: "{{subject}}比較選項前，會先要求明確的標準。",
+  108: "{{subject}}會檢查提案有沒有邏輯漏洞。",
+  109: "{{subject}}在辯論中重視正確勝過和諧。",
+  110: "{{subject}}在出現更有力的證據時，會改變立場。",
+  132: "{{subject}}會感謝別人付出的努力。",
+  133: "{{subject}}會避免可能讓人當眾難堪的選擇。",
+  134: "{{subject}}會詢問比較安靜的人對計畫有什麼感受。",
+  135: "{{subject}}化解衝突時，會優先維護彼此的信任。",
+  157: "{{subject}}會事先確認訂位或預約。",
+  158: "{{subject}}遇到步驟繁多的工作時會列出檢查清單。",
+  159: "{{subject}}會讓工作空間保持一貫的擺放方式。",
+  160: "{{subject}}即使有誘人的選擇，也會照約定好的行程走。",
+  182: "{{subject}}看到有趣的東西時，會改變路線過去看看。",
+  183: "{{subject}}做事是一陣一陣衝刺，而不是照固定的每日進度。",
+  184: "{{subject}}在蒐集各種可能性時，會延後做最終決定。",
+  185: "{{subject}}會保留選擇的空間，直到非決定不可。",
 };
 
 const jaQuestions: QuestionTable = {
@@ -907,6 +947,36 @@ const jaQuestions: QuestionTable = {
   179: "{{subject}}複数の作業を同時進行にしている。",
   180: "{{subject}}出かける直前に行き先の詳細を決める。",
   181: "{{subject}}直前の誘いにも応じる。",
+  8: "{{subject}}会話が途切れると、話をつないで盛り上げる。",
+  9: "{{subject}}何かあると、すぐに何人かに知らせる。",
+  10: "{{subject}}新しいチームメンバーには自分から声をかける。",
+  32: "{{subject}}グループでの外出より、一対一で会うほうを選ぶ。",
+  33: "{{subject}}よく連絡を取り合うのは、ごく少数の親しい人だ。",
+  34: "{{subject}}思いがけない質問には、少し間を置いてから答える。",
+  35: "{{subject}}注目の的になるのを避ける。",
+  58: "{{subject}}計画の現実的な問題点にいち早く気づく。",
+  59: "{{subject}}今ある手段や資源をもとに計画を立てる。",
+  60: "{{subject}}新しい作業を過去の経験と比べて考える。",
+  82: "{{subject}}細部を詰める前に、まず全体像を描く。",
+  83: "{{subject}}やり方がいくつも考えられるときは、ブレインストーミングから始める。",
+  84: "{{subject}}身近な物の新しい使い道を思いつく。",
+  85: "{{subject}}当たり前とされているやり方を疑ってみる。",
+  107: "{{subject}}選択肢を比べる前に、はっきりした基準を求める。",
+  108: "{{subject}}提案に論理的な穴がないか確かめる。",
+  109: "{{subject}}議論では場の和よりも正確さを優先する。",
+  110: "{{subject}}より確かな根拠が出てくれば意見を変える。",
+  132: "{{subject}}人の頑張りにお礼を言う。",
+  133: "{{subject}}誰かが人前で恥をかきそうな選択は避ける。",
+  134: "{{subject}}口数の少ない人にも、計画をどう思うか尋ねる。",
+  135: "{{subject}}対立を解決するときは信頼関係を守ることを優先する。",
+  157: "{{subject}}予約は前もって確認しておく。",
+  158: "{{subject}}手順の多い作業にはチェックリストを作る。",
+  159: "{{subject}}作業スペースをいつも同じように整えておく。",
+  160: "{{subject}}魅力的な誘いがあっても、決めた予定どおりに進める。",
+  182: "{{subject}}面白そうなものが目に入ると、道を変える。",
+  183: "{{subject}}毎日の決まったペースではなく、集中できるときに一気に進める。",
+  184: "{{subject}}可能性を集めているあいだは、最終的な決定を先延ばしにする。",
+  185: "{{subject}}決めなければならなくなるまで選択肢を残しておく。",
 };
 
 const koQuestions: QuestionTable = {
@@ -960,6 +1030,36 @@ const koQuestions: QuestionTable = {
   179: "{{subject}}여러 가지 일을 동시에 진행한다.",
   180: "{{subject}}출발 시간이 가까워져서야 외출 세부 사항을 정한다.",
   181: "{{subject}}갑작스러운 초대를 받아들인다.",
+  8: "{{subject}}대화가 끊기면 이야기를 이어 간다.",
+  9: "{{subject}}소식이 생기면 금세 여러 사람에게 알린다.",
+  10: "{{subject}}새로 온 팀원에게 먼저 다가간다.",
+  32: "{{subject}}여럿이 함께하는 외출보다 일대일 만남을 고른다.",
+  33: "{{subject}}자주 연락하는 사람은 소수에 불과하다.",
+  34: "{{subject}}예상치 못한 질문을 받으면 잠시 생각한 뒤 대답한다.",
+  35: "{{subject}}주목받는 자리를 피한다.",
+  58: "{{subject}}계획 초기에 현실적인 걸림돌을 알아차린다.",
+  59: "{{subject}}지금 가진 자원을 바탕으로 계획을 세운다.",
+  60: "{{subject}}새로운 일을 과거의 경험과 비교해 본다.",
+  82: "{{subject}}세부 사항을 채우기 전에 큰 그림부터 그린다.",
+  83: "{{subject}}여러 방법이 가능할 때는 브레인스토밍부터 한다.",
+  84: "{{subject}}익숙한 물건의 새로운 쓰임새를 생각해 낸다.",
+  85: "{{subject}}당연하게 여겨지는 방식에 의문을 품는다.",
+  107: "{{subject}}선택지를 비교하기 전에 명확한 기준을 요구한다.",
+  108: "{{subject}}제안에 논리적 허점이 없는지 따져 본다.",
+  109: "{{subject}}토론에서는 화합보다 정확성을 우선한다.",
+  110: "{{subject}}더 강한 근거가 나오면 입장을 바꾼다.",
+  132: "{{subject}}다른 사람의 노력에 고마움을 표현한다.",
+  133: "{{subject}}누군가 공개적으로 난처해질 만한 선택은 피한다.",
+  134: "{{subject}}말수가 적은 사람에게도 계획에 대해 어떻게 생각하는지 묻는다.",
+  135: "{{subject}}갈등을 해결할 때 신뢰를 지키는 것을 우선한다.",
+  157: "{{subject}}예약을 미리 확인해 둔다.",
+  158: "{{subject}}단계가 많은 일에는 체크리스트를 만든다.",
+  159: "{{subject}}작업 공간을 늘 같은 방식으로 정리해 둔다.",
+  160: "{{subject}}솔깃한 다른 선택지가 있어도 정해 둔 일정대로 움직인다.",
+  182: "{{subject}}흥미로운 것이 눈에 띄면 가던 길을 바꾼다.",
+  183: "{{subject}}매일 정해진 일정보다 몰입할 때 몰아서 일한다.",
+  184: "{{subject}}가능성을 모으는 동안에는 최종 결정을 미룬다.",
+  185: "{{subject}}꼭 결정해야 할 때까지 선택지를 열어 둔다.",
 };
 
 export const questionTranslations: Readonly<
@@ -1009,6 +1109,26 @@ const englishFirstPersonVerbs: Readonly<Record<string, string>> = {
   uses: "use",
   waits: "wait",
   writes: "write",
+  // Verbs used only by the longer self-test prompts.
+  shares: "share",
+  approaches: "approach",
+  selects: "select",
+  maintains: "maintain",
+  pauses: "pause",
+  avoids: "avoid",
+  spots: "spot",
+  bases: "base",
+  compares: "compare",
+  sketches: "sketch",
+  proposes: "propose",
+  questions: "question",
+  requests: "request",
+  tests: "test",
+  prioritizes: "prioritize",
+  thanks: "thank",
+  confirms: "confirm",
+  works: "work",
+  delays: "delay",
 };
 
 function englishQuestion(text: string, name: string, self: boolean) {
@@ -1032,7 +1152,7 @@ export function translateQuestion(
   if (locale === "en") return englishQuestion(fallbackEnglish, name, self);
 
   const table = questionTranslations[locale];
-  const template = table[questionId as SurveyQuestionId];
+  const template = table[questionId as TranslatedQuestionId];
   if (!template) return englishQuestion(fallbackEnglish, name, self);
 
   const subject = self
