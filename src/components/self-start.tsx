@@ -59,8 +59,8 @@ function goToBloom(type: string, answers?: BloomAnswers) {
 }
 
 /**
- * The home page's "how do you see yourself?" step: tick four letters, or take
- * the 80-question test in place, then carry the result into a Bloom survey.
+ * The /start page's "how do you see yourself?" step: tick four letters, or
+ * take the 80-question test, then carry the result into a Bloom survey.
  */
 export function SelfStart() {
   const b = useBloomCopy();
@@ -235,7 +235,7 @@ export function SelfStart() {
     <section className="self-start" ref={sectionRef}>
       <div className="self-start-intro">
         <span className="eyebrow">{b("self.eyebrow")}</span>
-        <h2>{b("self.title")}</h2>
+        <h1>{b("self.title")}</h1>
         <p>{b("self.body")}</p>
       </div>
       <div className="self-start-options">
