@@ -500,7 +500,7 @@ export async function getAssessmentsForReviewer(roomId: string, reviewerId: stri
      JOIN participants p ON p.id = a.target_id
      LEFT JOIN answers ans ON ans.assessment_id = a.id
      WHERE a.room_id = ? AND a.reviewer_id = ?
-     GROUP BY a.id, p.nickname, p.created_at
+     GROUP BY a.id, p.id, p.nickname, p.created_at
      ORDER BY a.is_self DESC, p.created_at, p.id`,
     [roomId, reviewerId],
   );

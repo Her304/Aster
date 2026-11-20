@@ -212,7 +212,7 @@ a { color: inherit; }
 .live-dot::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #719363; }
 .member-list { margin: 25px 0; border-top: 1px solid var(--line); }
 .member-row { min-height: 78px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 15px; border-bottom: 1px solid var(--line); }
-.member-row strong, .member-row span { display: block; }
+.member-row div strong, .member-row div span { display: block; }
 .member-row strong { font-family: var(--display); font-size: 18px; font-weight: 600; }
 .member-row div span { margin-top: 2px; color: var(--fern); font-size: 11px; }
 .member-row > .icon { color: var(--fern); }
