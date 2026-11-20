@@ -7,7 +7,7 @@ import friendsCircle from "@/images/friends-circle.jpg";
 import parkPicnic from "@/images/park-picnic.jpg";
 import { SURVEY_LENGTH, SURVEY_QUESTIONS } from "@/lib/survey";
 import { ArrowIcon, BrandMark, CheckIcon, LanguageSelect } from "@/components/ui";
-import { useBloomCopy } from "@/lib/bloom-i18n";
+import { OthersInvite } from "@/components/others-invite";
 import { I18nProvider, translateQuestion, useI18n, type TranslationKey } from "@/lib/i18n";
 
 type Screen = "home" | "lobby" | "dashboard" | "assessment" | "results";
@@ -632,7 +632,7 @@ function HomeScreen(props: {
           <button onClick={() => props.openDemo("revealed")} disabled={props.busy}>{t("home.sampleReveal")}</button>
         </div>
       </section>
-      <BloomInvite />
+      <OthersInvite />
       <section className="how-it-works">
         <div className="how-intro">
           <span className="eyebrow">{t("home.howEyebrow")}</span>
@@ -660,20 +660,6 @@ function HomeScreen(props: {
         <SourceLink />
       </footer>
     </div>
-  );
-}
-
-function BloomInvite() {
-  const b = useBloomCopy();
-  return (
-    <section className="bloom-invite">
-      <div>
-        <span className="eyebrow">{b("landing.eyebrow")}</span>
-        <h2>{b("landing.title")}</h2>
-        <p>{b("landing.body")}</p>
-      </div>
-      <a className="button primary" href="/bloom">{b("landing.cta")} <ArrowIcon /></a>
-    </section>
   );
 }
 

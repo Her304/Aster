@@ -1,22 +1,97 @@
+import { milestoneEmailHtml, signInEmailHtml, type MilestoneEmailCopy, type SignInEmailCopy } from "./email-template";
+
 type MailLocale = "en" | "zh-Hant" | "ja" | "ko";
 
-const copy: Record<MailLocale, { subject: string; body: (code: string) => string }> = {
-  en: {
+const signInCopy: Record<MailLocale, (code: string) => SignInEmailCopy> = {
+  en: (code) => ({
+    lang: "en",
     subject: "Your Aster sign-in code",
-    body: (code) => `Your Aster sign-in code is ${code}.\n\nIt works once and expires in 10 minutes. If you didn't ask for it, you can ignore this email.`,
-  },
-  "zh-Hant": {
+    preheader: `Your code is ${code}. It expires in 10 minutes.`,
+    eyebrow: "Your sign-in code",
+    heading: "Here’s your code.",
+    intro: "Enter these six digits on Aster to sign in.",
+    expiry: "It works once and expires in 10 minutes.",
+    ignore: "If you didn’t ask for it, you can ignore this email. Nobody can sign in without the code.",
+    tagline: "Aster · See yourself through your friends",
+  }),
+  "zh-Hant": (code) => ({
+    lang: "zh-Hant",
     subject: "你的 Aster 登入驗證碼",
-    body: (code) => `你的 Aster 登入驗證碼是 ${code}。\n\n此驗證碼只能使用一次，10 分鐘後失效。如果這不是你本人的請求，請忽略這封郵件。`,
-  },
-  ja: {
+    preheader: `你的驗證碼是 ${code}，10 分鐘後失效。`,
+    eyebrow: "你的登入驗證碼",
+    heading: "這是你的驗證碼。",
+    intro: "在 Aster 輸入這六位數字即可登入。",
+    expiry: "此驗證碼只能使用一次，10 分鐘後失效。",
+    ignore: "如果這不是你本人的請求，請忽略這封郵件。沒有驗證碼，任何人都無法登入。",
+    tagline: "Aster · 透過朋友的眼睛看見自己",
+  }),
+  ja: (code) => ({
+    lang: "ja",
     subject: "Aster のサインインコード",
-    body: (code) => `Aster のサインインコードは ${code} です。\n\n一度だけ使え、10分で無効になります。お心当たりがない場合は、このメールを無視してください。`,
-  },
-  ko: {
+    preheader: `コードは ${code} です。10分で無効になります。`,
+    eyebrow: "サインインコード",
+    heading: "あなたのコードです。",
+    intro: "Aster でこの6桁の数字を入力するとサインインできます。",
+    expiry: "一度だけ使え、10分で無効になります。",
+    ignore: "お心当たりがない場合は、このメールを無視してください。コードがなければ誰もサインインできません。",
+    tagline: "Aster · 友だちの目に映る自分を知る",
+  }),
+  ko: (code) => ({
+    lang: "ko",
     subject: "Aster 로그인 코드",
-    body: (code) => `Aster 로그인 코드는 ${code}입니다.\n\n한 번만 사용할 수 있으며 10분 후 만료됩니다. 요청한 적이 없다면 이 메일을 무시하세요.`,
-  },
+    preheader: `코드는 ${code}입니다. 10분 후 만료돼요.`,
+    eyebrow: "로그인 코드",
+    heading: "로그인 코드예요.",
+    intro: "Aster에서 이 여섯 자리 숫자를 입력하면 로그인돼요.",
+    expiry: "한 번만 사용할 수 있으며 10분 후 만료됩니다.",
+    ignore: "요청한 적이 없다면 이 메일을 무시하세요. 코드 없이는 누구도 로그인할 수 없어요.",
+    tagline: "Aster · 친구들의 눈으로 나를 보다",
+  }),
+};
+
+type Level = 3 | 5 | 8;
+
+const milestoneCopy: Record<MailLocale, (level: Level, total: number) => MilestoneEmailCopy> = {
+  en: (level, total) => ({
+    lang: "en",
+    subject: { 3: "Your Aster ranking is open", 5: "Your question-by-question comparison is open", 8: "Your view by relationship is open" }[level],
+    preheader: `${total} people have answered your survey.`,
+    eyebrow: "News from your survey",
+    lede: `${total} people have answered your survey, so ${level === 3 ? "the ranking is now open to everyone who answered" : level === 5 ? "your report now compares your answers with theirs, question by question" : "your report now shows how each kind of relationship sees you"}.`,
+    cta: "See your report",
+    turnOff: "You can turn these emails off on your survey page.",
+    tagline: "Aster · See yourself through your friends",
+  }),
+  "zh-Hant": (level, total) => ({
+    lang: "zh-Hant",
+    subject: { 3: "你的 Aster 排行已公開", 5: "逐題比較已解鎖", 8: "依關係分組已解鎖" }[level],
+    preheader: `已經有 ${total} 人回答你的問卷。`,
+    eyebrow: "你的問卷有新進展",
+    lede: `已經有 ${total} 人回答你的問卷，${level === 3 ? "排行現在已向所有作答者公開" : level === 5 ? "報告現在可以逐題比較你和他們的答案" : "報告現在可以看出不同關係的人怎麼看你"}。`,
+    cta: "查看報告",
+    turnOff: "你可以在問卷頁面關閉這些通知信。",
+    tagline: "Aster · 透過朋友的眼睛看見自己",
+  }),
+  ja: (level, total) => ({
+    lang: "ja",
+    subject: { 3: "Aster のランキングが公開されました", 5: "質問ごとの比較が解放されました", 8: "関係別の見え方が解放されました" }[level],
+    preheader: `アンケートに${total}人が回答しました。`,
+    eyebrow: "アンケートのお知らせ",
+    lede: `アンケートに${total}人が回答しました。${level === 3 ? "回答した人みんながランキングを見られるようになりました" : level === 5 ? "レポートで、あなたと友だちの回答を質問ごとに比べられるようになりました" : "レポートで、関係ごとの見え方がわかるようになりました"}。`,
+    cta: "レポートを見る",
+    turnOff: "このメールはアンケートのページで止められます。",
+    tagline: "Aster · 友だちの目に映る自分を知る",
+  }),
+  ko: (level, total) => ({
+    lang: "ko",
+    subject: { 3: "Aster 순위가 공개됐어요", 5: "문항별 비교가 열렸어요", 8: "관계별로 보기가 열렸어요" }[level],
+    preheader: `설문에 ${total}명이 답했어요.`,
+    eyebrow: "설문 소식",
+    lede: `설문에 ${total}명이 답했어요. ${level === 3 ? "이제 응답한 모두가 순위를 볼 수 있어요" : level === 5 ? "이제 리포트에서 내 답과 친구들의 답을 문항별로 비교할 수 있어요" : "이제 리포트에서 관계별로 나를 어떻게 보는지 볼 수 있어요"}.`,
+    cta: "리포트 보기",
+    turnOff: "이 메일은 설문 페이지에서 끌 수 있어요.",
+    tagline: "Aster · 친구들의 눈으로 나를 보다",
+  }),
 };
 
 export function mailLocale(input: unknown): MailLocale {
@@ -27,38 +102,39 @@ export function emailConfigured() {
   return Boolean(process.env.RESEND_API_KEY && process.env.EMAIL_FROM);
 }
 
-const milestoneCopy: Record<MailLocale, { subject: Record<number, string>; body: (level: number, total: number, link: string) => string }> = {
-  en: {
-    subject: { 3: "Your Aster ranking is open", 5: "Your question-by-question comparison is open", 8: "Your view by relationship is open" },
-    body: (level, total, link) =>
-      `${total} people have answered your survey, so ${level === 3 ? "the ranking is now open to everyone who answered" : level === 5 ? "your report now compares your answers with theirs, question by question" : "your report now shows how each kind of relationship sees you"}.\n\nSee it here: ${link}\n\nYou can turn these emails off on your survey page.`,
-  },
-  "zh-Hant": {
-    subject: { 3: "你的 Aster 排行已公開", 5: "逐題比較已解鎖", 8: "依關係分組已解鎖" },
-    body: (level, total, link) =>
-      `已經有 ${total} 人回答你的問卷，${level === 3 ? "排行現在已向所有作答者公開" : level === 5 ? "報告現在可以逐題比較你和他們的答案" : "報告現在可以看出不同關係的人怎麼看你"}。\n\n前往查看：${link}\n\n你可以在問卷頁面關閉這些通知信。`,
-  },
-  ja: {
-    subject: { 3: "Aster のランキングが公開されました", 5: "質問ごとの比較が解放されました", 8: "関係別の見え方が解放されました" },
-    body: (level, total, link) =>
-      `アンケートに${total}人が回答しました。${level === 3 ? "回答した人みんながランキングを見られるようになりました" : level === 5 ? "レポートで、あなたと友だちの回答を質問ごとに比べられるようになりました" : "レポートで、関係ごとの見え方がわかるようになりました"}。\n\nこちらから見られます：${link}\n\nこのメールはアンケートのページで止められます。`,
-  },
-  ko: {
-    subject: { 3: "Aster 순위가 공개됐어요", 5: "문항별 비교가 열렸어요", 8: "관계별로 보기가 열렸어요" },
-    body: (level, total, link) =>
-      `설문에 ${total}명이 답했어요. ${level === 3 ? "이제 응답한 모두가 순위를 볼 수 있어요" : level === 5 ? "이제 리포트에서 내 답과 친구들의 답을 문항별로 비교할 수 있어요" : "이제 리포트에서 관계별로 나를 어떻게 보는지 볼 수 있어요"}.\n\n여기서 확인하세요: ${link}\n\n이 메일은 설문 페이지에서 끌 수 있어요.`,
-  },
-};
+interface Message {
+  subject: string;
+  text: string;
+  html: string;
+}
+
+export function signInMessage(code: string, locale: MailLocale, origin: string): Message {
+  const copy = signInCopy[locale](code);
+  return {
+    subject: copy.subject,
+    text: `${copy.heading}\n\n${code}\n\n${copy.intro} ${copy.expiry}\n\n${copy.ignore}`,
+    html: signInEmailHtml(copy, code, origin),
+  };
+}
+
+export function milestoneMessage(level: number, total: number, link: string, locale: MailLocale, origin: string): Message {
+  const copy = milestoneCopy[locale](level as Level, total);
+  return {
+    subject: copy.subject,
+    text: `${copy.lede}\n\n${copy.cta}: ${link}\n\n${copy.turnOff}`,
+    html: milestoneEmailHtml(copy, link, origin),
+  };
+}
 
 /**
  * Sends through Resend when RESEND_API_KEY and EMAIL_FROM are set. Outside
  * production, with neither set, the message is printed to the server console
  * so it can be tried locally.
  */
-async function sendEmail(to: string, subject: string, text: string) {
+async function sendEmail(to: string, message: Message) {
   if (!emailConfigured()) {
     if (process.env.NODE_ENV === "production") throw new Error("Email delivery is not configured.");
-    console.info(`[aster] email to ${to}: ${subject}\n${text}`);
+    console.info(`[aster] email to ${to}: ${message.subject}\n${message.text}`);
     return;
   }
   const response = await fetch("https://api.resend.com/emails", {
@@ -67,22 +143,19 @@ async function sendEmail(to: string, subject: string, text: string) {
       Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ from: process.env.EMAIL_FROM, to: [to], subject, text }),
+    body: JSON.stringify({ from: process.env.EMAIL_FROM, to: [to], subject: message.subject, text: message.text, html: message.html }),
   });
   if (!response.ok) throw new Error(`Email delivery failed with status ${response.status}.`);
 }
 
-export async function sendSignInCode(email: string, code: string, locale: MailLocale) {
-  const message = copy[locale];
-  const body = message.body(code);
+export async function sendSignInCode(email: string, code: string, locale: MailLocale, origin: string) {
   if (!emailConfigured() && process.env.NODE_ENV !== "production") {
     console.info(`[aster] sign-in code for ${email}: ${code}`);
     return;
   }
-  await sendEmail(email, message.subject, body);
+  await sendEmail(email, signInMessage(code, locale, origin));
 }
 
 export async function sendMilestone(email: string, level: number, total: number, link: string, locale: MailLocale) {
-  const message = milestoneCopy[locale];
-  await sendEmail(email, message.subject[level], message.body(level, total, link));
+  await sendEmail(email, milestoneMessage(level, total, link, locale, new URL(link).origin));
 }

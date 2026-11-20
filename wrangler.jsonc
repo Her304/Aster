@@ -23,6 +23,13 @@
 	},
 	// Lets non-production branches deploy as Worker Previews.
 	"previews": {},
+	// Plain-text variables live here, because every deploy replaces the
+	// Worker's plain-text variables with this list. Secrets (RESEND_API_KEY,
+	// DATABASE_URL, ADMIN_TOKEN) stay in the dashboard; deploys keep those.
+	"vars": {
+		// Sender for sign-in codes and notifications (domain verified in Resend).
+		"EMAIL_FROM": "Aster <hello-noreply@astereve.net>"
+	},
 	"observability": {
 		"logs": {
 			"enabled": true,

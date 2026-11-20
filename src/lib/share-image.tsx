@@ -38,26 +38,45 @@ async function googleFont(family: string, weight: Weight, text: string): Promise
   }
 }
 
-const SCRIPT_FONTS = [
-  { suffix: "", serif: "Noto Serif TC", sans: "Noto Sans HK", needed: () => true },
-  { suffix: "JP", serif: "Noto Serif JP", sans: "Noto Sans JP", needed: (text: string) => /[\u3040-\u30ff]/.test(text) },
-  { suffix: "KR", serif: "Noto Serif KR", sans: "Noto Sans KR", needed: (text: string) => /[\u1100-\u11ff\uac00-\ud7af]/.test(text) },
-];
+const KANA = /[\u3040-\u30ff]/;
+const HANGUL = /[\u1100-\u11ff\uac00-\ud7af]/;
 
-/** Font stacks to use in styles: every loaded face of a kind, in fallback order. */
-export const serifStack = SCRIPT_FONTS.map((font) => `Serif${font.suffix}`).join(", ");
-export const sansStack = SCRIPT_FONTS.map((font) => `Sans${font.suffix}`).join(", ");
+const SCRIPT_FONTS = {
+  TC: { serif: "Noto Serif TC", sans: "Noto Sans HK" },
+  JP: { serif: "Noto Serif JP", sans: "Noto Sans JP" },
+  KR: { serif: "Noto Serif KR", sans: "Noto Sans KR" },
+} as const;
+type Script = keyof typeof SCRIPT_FONTS;
 
 /**
- * Serif for headlines and sans for the rest, with Japanese and Korean faces
- * added when the text needs them. Each face gets its own name: faces sharing
- * a name and weight would replace one another.
+ * One serif and one sans per image, matching the language on it (DESIGN.md:
+ * no more than three faces). Every set covers Latin and Han, so Japanese text
+ * gets Japanese kanji forms and Korean text Korean ones. A second set loads
+ * only when the text holds a script the first cannot draw, such as a Korean
+ * name on a Chinese survey.
  */
+function scriptsFor(text: string): Script[] {
+  const primary: Script = KANA.test(text) ? "JP" : HANGUL.test(text) ? "KR" : "TC";
+  const extra: Script[] = [];
+  if (HANGUL.test(text) && primary !== "KR") extra.push("KR");
+  if (KANA.test(text) && primary !== "JP") extra.push("JP");
+  return [primary, ...extra];
+}
+
+/** Font stacks for styles, in fallback order, for the faces shareFonts loaded for this text. */
+export function fontStacks(text: string) {
+  const scripts = scriptsFor(text);
+  return {
+    serifStack: scripts.map((script) => `Serif${script}`).join(", "),
+    sansStack: scripts.map((script) => `Sans${script}`).join(", "),
+  };
+}
+
+/** Serif for headlines and sans for the rest. Each face gets its own name: faces sharing a name and weight would replace one another. */
 export async function shareFonts(serifText: string, sansText: string): Promise<FontEntry[]> {
-  const all = serifText + sansText;
-  const loads = SCRIPT_FONTS.filter((font) => font.needed(all)).flatMap((font) => [
-    googleFont(font.serif, 700, serifText).then((data) => (data ? { name: `Serif${font.suffix}`, data, weight: 700 as const, style: "normal" as const } : null)),
-    googleFont(font.sans, 500, sansText).then((data) => (data ? { name: `Sans${font.suffix}`, data, weight: 500 as const, style: "normal" as const } : null)),
+  const loads = scriptsFor(serifText + sansText).flatMap((script) => [
+    googleFont(SCRIPT_FONTS[script].serif, 700, serifText).then((data) => (data ? { name: `Serif${script}`, data, weight: 700 as const, style: "normal" as const } : null)),
+    googleFont(SCRIPT_FONTS[script].sans, 500, sansText).then((data) => (data ? { name: `Sans${script}`, data, weight: 500 as const, style: "normal" as const } : null)),
   ]);
   return (await Promise.all(loads)).filter((font): font is FontEntry => font !== null);
 }

@@ -135,22 +135,13 @@ export function Garden({ plants }: { plants: readonly GardenPlant[] }) {
               <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="7" />
               <feDisplacementMap in="SourceGraphic" scale="3" />
             </filter>
-            <linearGradient id="garden-soil-left" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stopColor="#c9a681" />
-              <stop offset="1" stopColor="#b38f6b" />
-            </linearGradient>
-            <linearGradient id="garden-soil-right" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stopColor="#b3906c" />
-              <stop offset="1" stopColor="#9c7957" />
-            </linearGradient>
           </defs>
-          <ellipse cx={bottom.x} cy={bottom.y + SOIL - 0.1 * U} rx={size * U * 0.9} ry={0.28 * U} fill="rgba(30,55,41,0.08)" />
           <g filter="url(#garden-wash)">
-            <polygon points={[point(left), point(bottom), point(bottom, SOIL), point(left, SOIL)].join(" ")} fill="url(#garden-soil-left)" />
-            <polygon points={[point(bottom), point(right), point(right, SOIL), point(bottom, SOIL)].join(" ")} fill="url(#garden-soil-right)" />
-            <polygon points={`${point(left)} ${point(bottom)} ${fringe(left, bottom)}`} fill="#a7bf86" />
-            <polygon points={`${point(bottom)} ${point(right)} ${fringe(bottom, right)}`} fill="#98b179" />
-            <polygon points={[point(top), point(right), point(bottom), point(left)].join(" ")} fill="#c6d6a6" />
+            <polygon points={[point(left), point(bottom), point(bottom, SOIL), point(left, SOIL)].join(" ")} className="soil-left" />
+            <polygon points={[point(bottom), point(right), point(right, SOIL), point(bottom, SOIL)].join(" ")} className="soil-right" />
+            <polygon points={`${point(left)} ${point(bottom)} ${fringe(left, bottom)}`} className="turf-left" />
+            <polygon points={`${point(bottom)} ${point(right)} ${fringe(bottom, right)}`} className="turf-right" />
+            <polygon points={[point(top), point(right), point(bottom), point(left)].join(" ")} className="top" />
             {Array.from({ length: size * size }, (_, index) => {
               const row = Math.floor(index / size);
               const col = index % size;
@@ -159,9 +150,7 @@ export function Garden({ plants }: { plants: readonly GardenPlant[] }) {
                 <polygon
                   key={index}
                   points={`${x},${y - U / 2} ${x + U},${y} ${x},${y + U / 2} ${x - U},${y}`}
-                  fill={(row + col) % 2 ? "#bfd19c" : "#cddcb0"}
-                  stroke="rgba(255,255,255,0.35)"
-                  strokeWidth="1"
+                  className={(row + col) % 2 ? "tile alt" : "tile"}
                 />
               );
             })}
@@ -173,7 +162,7 @@ export function Garden({ plants }: { plants: readonly GardenPlant[] }) {
             const { x, y } = centre(row, col);
             const dx = ((seed(`dx:${row}:${col}`) % 9) - 4) * 2;
             return (
-              <g key={`tuft-${index}`} stroke="#86a466" strokeWidth="2" strokeLinecap="round" fill="none" opacity="0.8">
+              <g key={`tuft-${index}`} className="tuft">
                 <path d={`M${x + dx - 5},${y + 3} q-1,-7 -4,-10`} />
                 <path d={`M${x + dx},${y + 4} q0,-8 1,-13`} />
                 <path d={`M${x + dx + 5},${y + 3} q1,-6 5,-9`} />
@@ -182,7 +171,7 @@ export function Garden({ plants }: { plants: readonly GardenPlant[] }) {
           })}
           {placed.map(({ plant, row, col }) => {
             const { x, y } = centre(row, col);
-            return <ellipse key={`shade-${plant.id}`} cx={x} cy={y + 2} rx={0.42 * U} ry={0.16 * U} fill="rgba(60,85,45,0.22)" />;
+            return <ellipse key={`shade-${plant.id}`} cx={x} cy={y + 2} rx={0.42 * U} ry={0.16 * U} className="bed" />;
           })}
         </svg>
         <ul className="garden-plants">

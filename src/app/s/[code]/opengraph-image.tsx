@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 import { getSurveyByCode } from "@/lib/bloom-data";
-import { asterMark, palette, sansStack, serifStack, shareFonts } from "@/lib/share-image";
+import { asterMark, fontStacks, palette, shareFonts } from "@/lib/share-image";
 
 export const alt = "An invitation to answer a short Aster survey";
 export const size = { width: 1200, height: 630 };
@@ -14,6 +14,7 @@ export default async function Image({ params }: { params: Promise<{ code: string
   const headline = `How do you see ${subject}`;
   const detail = "Sixteen quick questions · about two minutes";
   const footer = "Answer, then see how everyone else sees them.";
+  const { serifStack, sansStack } = fontStacks(headline + `${detail}${footer}Aster`);
   const [mark, fonts] = await Promise.all([asterMark(), shareFonts(headline, `${detail}${footer}Aster`)]);
 
   return new ImageResponse(

@@ -17,7 +17,7 @@ export async function POST(request: Request) {
   const issued = await issueSignInCode(email);
   if ("limited" in issued) return error("Too many codes for this address. Try again in an hour.", 429);
   try {
-    await sendSignInCode(email, issued.code, mailLocale(body.locale));
+    await sendSignInCode(email, issued.code, mailLocale(body.locale), new URL(request.url).origin);
   } catch {
     return error("The code couldn’t be sent. Please try again.", 502);
   }

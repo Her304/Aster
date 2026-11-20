@@ -15,6 +15,7 @@ import {
 } from "@/lib/bloom";
 import { useBloomCopy, type BloomKey } from "@/lib/bloom-i18n";
 import { I18nProvider, useI18n } from "@/lib/i18n";
+import { bloomSelfAnswers, clearSelfView, loadSelfView } from "@/lib/self-test";
 import { BadgeList, BloomHeader, BoardView, Questionnaire, TypePicker, api, useErrorText } from "./shared";
 import { Garden } from "./garden";
 
@@ -112,9 +113,21 @@ function Setup({ signedIn, onCreated }: { signedIn: boolean; onCreated: () => Pr
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
+  const [fromHomeTest, setFromHomeTest] = useState(false);
+
   useEffect(() => {
     const prefill = new URLSearchParams(window.location.search).get("name");
     if (prefill) setDisplayName(prefill.slice(0, 24));
+    // Letters ticked, or the 80-question test taken, on the home page.
+    const view = loadSelfView();
+    if (view) {
+      setSelfType(view.type);
+      const handoff = bloomSelfAnswers(view);
+      if (handoff) {
+        setSelfTest(handoff);
+        setFromHomeTest(true);
+      }
+    }
   }, []);
 
   async function create() {
@@ -132,6 +145,7 @@ function Setup({ signedIn, onCreated }: { signedIn: boolean; onCreated: () => Pr
           locale,
         }),
       });
+      clearSelfView();
       await onCreated();
     } catch (caught) {
       setError(errorText(caught));
@@ -196,7 +210,9 @@ function Setup({ signedIn, onCreated }: { signedIn: boolean; onCreated: () => Pr
           <p className="helper-note">{b("setup.lettersHint")}</p>
           <TypePicker value={selfType} onChange={setSelfType} />
         </div>
-        {selfTest ? (
+        {selfTest && fromHomeTest ? (
+          <p className="helper-note"><CheckIcon /> {b("setup.fromHome", { type: selfType })}</p>
+        ) : selfTest ? (
           <p className="helper-note"><CheckIcon /> {b("setup.testDone", { type: scoreBloom(selfTest.answers, selfTest.tiebreaks).type ?? "" })}</p>
         ) : (
           <button type="button" className="text-button" onClick={() => setStage("selfTest")} disabled={displayName.trim().length < 2}>
