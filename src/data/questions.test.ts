@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { QUESTION_BANK } from "./questions";
 import { SURVEY_QUESTIONS } from "../lib/survey";
+import { selectedQuestionIds } from "../lib/i18n";
 
 describe("Aster question bank", () => {
   it("contains 200 unique, named, observable prompts", () => {
@@ -19,11 +20,18 @@ describe("Aster question bank", () => {
     }
   });
 
-  it("selects an evenly distributed 50-question v1 survey", () => {
-    expect(SURVEY_QUESTIONS).toHaveLength(50);
-    expect(SURVEY_QUESTIONS.filter((question) => question.dimension === "EI")).toHaveLength(13);
-    expect(SURVEY_QUESTIONS.filter((question) => question.dimension === "SN")).toHaveLength(13);
-    expect(SURVEY_QUESTIONS.filter((question) => question.dimension === "TF")).toHaveLength(12);
-    expect(SURVEY_QUESTIONS.filter((question) => question.dimension === "JP")).toHaveLength(12);
+  it("selects a 30-question room survey, spread across the axes with alternating poles", () => {
+    expect(SURVEY_QUESTIONS).toHaveLength(30);
+    expect(new Set(SURVEY_QUESTIONS.map((question) => question.id)).size).toBe(30);
+    const counts = { EI: 8, SN: 8, TF: 7, JP: 7 } as const;
+    for (const dimension of ["EI", "SN", "TF", "JP"] as const) {
+      const onAxis = SURVEY_QUESTIONS.filter((question) => question.dimension === dimension);
+      expect(onAxis).toHaveLength(counts[dimension]);
+      expect(onAxis.filter((question) => question.positivePole === dimension[0])).toHaveLength(4);
+    }
+  });
+
+  it("asks only prompts that are translated", () => {
+    for (const question of SURVEY_QUESTIONS) expect(selectedQuestionIds as readonly number[]).toContain(question.id);
   });
 });

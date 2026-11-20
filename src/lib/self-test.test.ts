@@ -2,27 +2,32 @@ import { describe, expect, it } from "vitest";
 import { BLOOM_QUESTION_IDS, scoreBloom } from "./bloom";
 import { questionTranslations, translateQuestion, type TranslatedQuestionId } from "./i18n";
 import { DIMENSIONS } from "./scoring";
-import { SELF_TEST_LENGTH, SELF_TEST_QUESTIONS, bloomSelfAnswers, scoreSelfTest, selfTestResult } from "./self-test";
+import { SELF_TEST_LENGTH, SELF_TEST_PAGES, SELF_TEST_PAGE_SIZE, SELF_TEST_QUESTIONS, bloomSelfAnswers, scoreSelfTest, selfTestResult } from "./self-test";
 
 const agreeWith = (pole: string) =>
   Object.fromEntries(SELF_TEST_QUESTIONS.map((question) => [question.id, question.positivePole === pole ? 5 : 1]));
 
-describe("80-question self-test", () => {
-  it("asks twenty questions per axis, ten favouring each pole, with no repeats", () => {
-    expect(SELF_TEST_LENGTH).toBe(80);
-    expect(new Set(SELF_TEST_QUESTIONS.map((question) => question.id)).size).toBe(80);
+describe("16-question self-test", () => {
+  it("asks exactly what respondents answer, in the same order", () => {
+    expect(SELF_TEST_LENGTH).toBe(16);
+    expect(SELF_TEST_QUESTIONS.map((question) => question.id)).toEqual([...BLOOM_QUESTION_IDS]);
     for (const dimension of DIMENSIONS) {
       const onAxis = SELF_TEST_QUESTIONS.filter((question) => question.dimension === dimension);
-      expect(onAxis).toHaveLength(20);
+      expect(onAxis).toHaveLength(4);
       for (const pole of dimension.split("")) {
-        expect(onAxis.filter((question) => question.positivePole === pole)).toHaveLength(10);
+        expect(onAxis.filter((question) => question.positivePole === pole)).toHaveLength(2);
       }
     }
   });
 
-  it("contains every Bloom question so answers can carry over", () => {
-    const ids = SELF_TEST_QUESTIONS.map((question) => question.id);
-    for (const id of BLOOM_QUESTION_IDS) expect(ids).toContain(id);
+  it("splits into two even pages", () => {
+    expect(SELF_TEST_PAGES).toBe(2);
+    expect(SELF_TEST_LENGTH % SELF_TEST_PAGE_SIZE).toBe(0);
+  });
+
+  it("scores the same type Bloom would from the same answers", () => {
+    const answers = Object.fromEntries(SELF_TEST_QUESTIONS.map((question, index) => [question.id, (index % 5) + 1]));
+    expect(selfTestResult(answers).type).toBe(scoreBloom(answers).type);
   });
 
   it("is translated into every language", () => {

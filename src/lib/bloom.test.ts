@@ -14,6 +14,7 @@ import {
   mostDivided,
   responseSimilarity,
   scoreBloom,
+  scoreSimilarity,
   undecidedAxes,
   type BloomAnswers,
   type ReportResponse,
@@ -259,4 +260,16 @@ describe("AI prompt", () => {
       expect(Object.keys(bloomTranslations[locale]).sort()).toEqual(keys);
     }
   });
+});
+
+describe("scoreSimilarity", () => {
+  it("is 100 when every axis fully backs the self type and 0 when it fully backs the opposite", () => {
+    expect(scoreSimilarity("INTJ", { EI: 100, SN: 100, TF: 0, JP: 0 })).toBe(100);
+    expect(scoreSimilarity("INTJ", { EI: 0, SN: 0, TF: 100, JP: 100 })).toBe(0);
+  });
+
+  it("counts a missing axis as halfway", () => {
+    expect(scoreSimilarity("ESTJ", { EI: 0, SN: 0, TF: 0, JP: null })).toBe(88);
+  });
+
 });

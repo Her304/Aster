@@ -3,7 +3,7 @@ import { getRoomByCode, getRoomParticipants, queryAll } from "@/lib/db";
 import { error } from "@/lib/http";
 import { currentParticipant } from "@/lib/session";
 import { averageReviewerScores, scoreAssessment, type ScoredProfile } from "@/lib/scoring";
-import { SURVEY_QUESTIONS } from "@/lib/survey";
+import { QUESTION_BANK } from "@/data/questions";
 
 export const runtime = "nodejs";
 
@@ -24,7 +24,9 @@ async function scoreReview(assessmentId: string) {
   const mapped = Object.fromEntries(
     answers.map((answer) => [answer.question_id, answer.value === 0 ? "not-sure" : answer.value]),
   );
-  return scoreAssessment(SURVEY_QUESTIONS, mapped as never);
+  // Scored on whatever was answered, so rooms finished on the older 50-prompt survey keep their results.
+  const answeredIds = new Set(answers.map((answer) => Number(answer.question_id)));
+  return scoreAssessment(QUESTION_BANK.filter((question) => answeredIds.has(question.id)), mapped as never);
 }
 
 function compact(profile: ScoredProfile | null) {

@@ -83,6 +83,9 @@ export async function POST(request: NextRequest) {
 
       const participants = await getRoomParticipants(created.roomId, database);
       const byId = new Map(participants.map((participant) => [participant.id, participant]));
+      // Mina's friends in the order her flow visits them: the active sample has her
+      // done with herself and two friends, part-way through the third, the fourth untouched.
+      const minaFriends = participants.filter((participant) => participant.nickname !== "Mina").map((participant) => participant.nickname);
       const assessments = await database.all<{
         id: string;
         reviewer_id: string;
@@ -102,12 +105,13 @@ export async function POST(request: NextRequest) {
 
         let count = SURVEY_QUESTIONS.length;
         let submitted = true;
-        if (kind === "active" && reviewer.nickname === "Mina") {
-          if (target.nickname === "Cleo") {
-            count = 18;
+        if (kind === "active" && reviewer.nickname === "Mina" && !assessment.is_self) {
+          const position = minaFriends.indexOf(target.nickname);
+          if (position === 2) {
+            count = 12;
             submitted = false;
-          } else if (assessment.is_self) {
-            count = 30;
+          } else if (position >= 3) {
+            count = 0;
             submitted = false;
           }
         }
@@ -120,12 +124,14 @@ export async function POST(request: NextRequest) {
             value: valueFor(question, desiredType, index),
           });
         });
-        await database.run(
-          submitted
-            ? "UPDATE assessments SET status = 'submitted', submitted_at = CURRENT_TIMESTAMP WHERE id = ?"
-            : "UPDATE assessments SET status = 'in_progress' WHERE id = ?",
-          [assessment.id],
-        );
+        if (submitted || count > 0) {
+          await database.run(
+            submitted
+              ? "UPDATE assessments SET status = 'submitted', submitted_at = CURRENT_TIMESTAMP WHERE id = ?"
+              : "UPDATE assessments SET status = 'in_progress' WHERE id = ?",
+            [assessment.id],
+          );
+        }
       }
 
       await insertAnswers(database, answerRows);

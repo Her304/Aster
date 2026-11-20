@@ -1,10 +1,11 @@
 import { QUESTION_BANK, type Dimension, type Question } from "../data/questions";
 
+/** Thirty prompts for a room: eight on E/I and S/N, seven on T/F and J/P, alternating poles. */
 const allocation: Record<Dimension, number> = {
-  EI: 13,
-  SN: 13,
-  TF: 12,
-  JP: 12,
+  EI: 8,
+  SN: 8,
+  TF: 7,
+  JP: 7,
 };
 
 function chooseBalanced(dimension: Dimension, count: number) {
@@ -27,12 +28,12 @@ const groups = (Object.keys(allocation) as Dimension[]).map((dimension) =>
   chooseBalanced(dimension, allocation[dimension]),
 );
 
-export const SURVEY_QUESTIONS: Question[] = Array.from({ length: 13 }, (_, index) =>
+export const SURVEY_QUESTIONS: Question[] = Array.from({ length: Math.max(...Object.values(allocation)) }, (_, index) =>
   groups.map((group) => group[index]).filter(Boolean),
 ).flat();
 
 export const SURVEY_LENGTH = SURVEY_QUESTIONS.length;
-export const QUESTIONS_PER_PAGE = 10;
+export const SURVEY_QUESTION_IDS: ReadonlySet<number> = new Set(SURVEY_QUESTIONS.map((question) => Number(question.id)));
 
 export function displayQuestion(text: string, nickname: string, self = false) {
   if (self) {

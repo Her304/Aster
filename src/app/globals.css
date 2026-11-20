@@ -622,6 +622,15 @@ a { color: inherit; }
 .response-list small { color: var(--fern); font-size: 12px; }
 .response-list b { font-family: var(--display); font-size: 18px; }
 .toggle-row { display: flex; align-items: center; gap: 10px; font-size: 14px; cursor: pointer; }
+/* Rooms: the fixed order of who to answer about, and the waiting room. */
+.flow-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.flow-steps li { display: flex; align-items: center; gap: 8px; padding: 5px 12px 5px 5px; border: 1px solid var(--line); border-radius: 999px; background: var(--white); font-size: 13px; font-weight: 600; color: var(--ink-soft); }
+.flow-steps li.current { border-color: var(--ink); color: var(--ink); }
+.flow-steps li.done { opacity: 0.6; }
+.flow-steps .avatar-small { width: 26px; height: 26px; font-size: 10px; }
+.flow-steps .icon { width: 14px; height: 14px; }
+.waiting-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.response-list.room-list li .pulse { justify-self: center; }
 .toggle-row input { width: 18px; height: 18px; accent-color: var(--ink); }
 .privacy-card { background: rgba(236,228,214,0.6); }
 .reading-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
@@ -698,7 +707,7 @@ a { color: inherit; }
 .others-invite-steps li { display: flex; align-items: center; gap: 9px; color: var(--ink); font-size: 14px; font-weight: 600; }
 .others-invite-steps span { color: var(--marker); font-family: var(--hand); font-size: 26px; font-weight: 600; line-height: 1; transform: rotate(-4deg); }
 .others-invite .button { flex: 0 0 auto; text-decoration: none; }
-/* /start: tick your letters or take the 80-question self-test. */
+/* /start: tick your letters or take the 16-question self-test. */
 .start-shell .self-start { border-top: 0; padding-top: 28px; }
 .start-shell .self-start h1 { font-size: clamp(34px, 4.6vw, 54px); }
 .self-start { max-width: 1440px; margin: 0 auto; padding: 40px 5vw 46px; border-top: 2px dashed rgba(21,61,47,0.26); scroll-margin-top: 12px; }
@@ -736,6 +745,7 @@ a { color: inherit; }
   .self-test-progress { justify-items: start; }
   .response-list li { grid-template-columns: minmax(0, 1fr) auto; }
   .response-list li .text-button { grid-column: 1 / -1; justify-self: start; }
+  .response-list.room-list li { grid-template-columns: minmax(0, 1fr) auto auto; }
 }
 
 @media (prefers-reduced-motion: reduce) {

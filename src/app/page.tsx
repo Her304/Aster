@@ -1,84 +1,21 @@
 "use client";
 
 import Image, { type StaticImageData } from "next/image";
-import { useCallback, useEffect, useRef, useState } from "react";
-import asterBouquet from "@/images/aster-bouquet.webp";
+import { useCallback, useEffect, useState } from "react";
 import friendsCircle from "@/images/friends-circle.jpg";
 import parkPicnic from "@/images/park-picnic.jpg";
-import { SURVEY_LENGTH, SURVEY_QUESTIONS } from "@/lib/survey";
+import { SURVEY_LENGTH } from "@/lib/survey";
 import { ArrowIcon, BrandMark, CheckIcon, LanguageSelect } from "@/components/ui";
 import { OthersInvite } from "@/components/others-invite";
 import { AccountLink } from "@/components/bloom/shared";
-import { I18nProvider, translateQuestion, useI18n, type TranslationKey } from "@/lib/i18n";
+import { avatarColors, initials, type AssessmentData, type ResultsData, type RoomData } from "@/components/room/common";
+import { RoomFlow, WaitingRoom } from "@/components/room/room-flow";
+import { RoomResults } from "@/components/room/room-results";
+import { I18nProvider, useI18n, type TranslationKey } from "@/lib/i18n";
 
-type Screen = "home" | "lobby" | "dashboard" | "assessment" | "results";
-type AssessmentStatus = "not_started" | "in_progress" | "submitted";
-
-interface RoomData {
-  room: { code: string; status: "lobby" | "survey" | "revealed"; isDemo: boolean; createdAt: string };
-  me: { id: string; nickname: string; isHost: boolean };
-  members: Array<{
-    id: string;
-    nickname: string;
-    isHost: boolean;
-    requiredDone: number;
-    requiredTotal: number;
-  }>;
-  assessments: Array<{
-    id: string;
-    targetId: string;
-    targetName: string;
-    isSelf: boolean;
-    status: AssessmentStatus;
-    answerCount: number;
-  }>;
-  inviteUrl: string;
-}
-
-interface AssessmentData {
-  assessment: { id: string; targetName: string; isSelf: boolean; status: AssessmentStatus };
-  answers: Record<number, number>;
-}
-
-interface CompactProfile {
-  type: string | null;
-  contributingReviewerCount: number;
-  closelyBalancedDimensions: string[];
-  dimensions: Record<string, { score: number; preference: string; closelyBalanced: boolean; reviewerCount: number } | null>;
-}
-
-interface ResultsData {
-  people: Array<{
-    id: string;
-    nickname: string;
-    isMe: boolean;
-    overall: CompactProfile;
-    self: CompactProfile | null;
-    perspectives: Array<{ reviewerName: string; profile: CompactProfile }>;
-  }>;
-}
-
-const responseOptions = [
-  { value: 1, label: "response.strongDisagree", compact: "––" },
-  { value: 2, label: "response.disagree", compact: "–" },
-  { value: 3, label: "response.neither", compact: "○" },
-  { value: 4, label: "response.agree", compact: "+" },
-  { value: 5, label: "response.strongAgree", compact: "++" },
-  { value: 0, label: "response.notSure", compact: "?" },
-] satisfies Array<{ value: number; label: TranslationKey; compact: string }>;
-
-const avatarColors = ["lilac", "moss", "clay", "sky", "butter"];
+type Screen = "home" | "lobby" | "flow" | "waiting" | "results";
 
 const repositoryUrl = "https://github.com/Her304/Aster";
-
-function initials(name: string) {
-  return name
-    .split(/\s+/)
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-}
 
 function BloomOrnament() {
   return (
@@ -146,42 +83,6 @@ function Snapshot({
   );
 }
 
-function FlowerIllustration({ names }: { names?: string[] }) {
-  const { t } = useI18n();
-  const petalNames = names ?? [t("common.you"), ...Array.from({ length: 4 }, () => t("common.friends"))];
-  return (
-    <div className="flower-wrap">
-      <Image
-        src={asterBouquet}
-        alt=""
-        sizes="(max-width: 780px) 82vw, 480px"
-      />
-      <div className="petal-notes" aria-hidden="true">
-        {petalNames.slice(0, 5).map((name, index) => (
-          <span key={`${name}-${index}`} className={`petal-note note-${index}`}>
-            {name}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function ProgressRing({ value, label }: { value: number; label: string }) {
-  const progress = Math.max(0, Math.min(100, value));
-  return (
-    <div className="progress-ring" style={{ "--progress": `${progress * 3.6}deg` } as React.CSSProperties}>
-      <div><strong>{Math.round(progress)}%</strong><span>{label}</span></div>
-    </div>
-  );
-}
-
-function StatusPill({ status }: { status: AssessmentStatus }) {
-  const { t } = useI18n();
-  const labels = { not_started: t("status.notStarted"), in_progress: t("status.inProgress"), submitted: t("status.complete") };
-  return <span className={`status-pill ${status}`}>{status === "submitted" && <CheckIcon />}{labels[status]}</span>;
-}
-
 export default function AsterApp() {
   return <I18nProvider><AsterAppContent /></I18nProvider>;
 }
@@ -193,19 +94,11 @@ function AsterAppContent() {
   const [nickname, setNickname] = useState("");
   const [joinCode, setJoinCode] = useState("");
   const [room, setRoom] = useState<RoomData | null>(null);
-  const [assessment, setAssessment] = useState<AssessmentData | null>(null);
+  const [flow, setFlow] = useState<{ data: AssessmentData; step: number } | null>(null);
   const [results, setResults] = useState<ResultsData | null>(null);
-  const [page, setPage] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [saveState, setSaveState] = useState<"saved" | "saving" | "error">("saved");
-  const [confirmSubmit, setConfirmSubmit] = useState(false);
-  const [pendingSaveCount, setPendingSaveCount] = useState(0);
-  const saveQueue = useRef(Promise.resolve());
-  const pendingSaves = useRef(0);
-  const saveHadError = useRef(false);
-  const submitButtonRef = useRef<HTMLButtonElement>(null);
   const localizedError = (caught: unknown, key: TranslationKey) =>
     locale === "en" && caught instanceof Error ? caught.message : t(key);
 
@@ -219,15 +112,37 @@ function AsterAppContent() {
     return data;
   }, []);
 
+  /**
+   * Puts this person wherever the room has them: the lobby before the host
+   * starts, then their next unfinished assessment (themselves first, then each
+   * friend), then the waiting room, then the results once everyone is done.
+   */
   const openRoom = useCallback(
-    async (code: string, preferred?: Screen) => {
+    async (code: string) => {
       const data = await request<RoomData>(`/api/rooms/${code}`);
-      setRoom(data);
-      setAssessment(null);
-      setResults(null);
-      const next = preferred || (data.room.status === "lobby" ? "lobby" : "dashboard");
-      setScreen(next);
       window.history.replaceState({}, "", `/?room=${data.room.code}`);
+      if (data.room.status === "revealed") {
+        const revealed = await request<ResultsData>(`/api/rooms/${data.room.code}/results`);
+        setRoom(data);
+        setResults(revealed);
+        setScreen("results");
+        return;
+      }
+      if (data.room.status === "lobby") {
+        setRoom(data);
+        setScreen("lobby");
+        return;
+      }
+      const nextIndex = data.assessments.findIndex((item) => item.status !== "submitted");
+      if (nextIndex === -1) {
+        setRoom(data);
+        setScreen("waiting");
+        return;
+      }
+      const next = await request<AssessmentData>(`/api/assessments/${data.assessments[nextIndex].id}`);
+      setRoom(data);
+      setFlow({ data: next, step: nextIndex + 1 });
+      setScreen("flow");
     },
     [request],
   );
@@ -258,55 +173,29 @@ function AsterAppContent() {
   }, [notice]);
 
   useEffect(() => {
-    if (screen !== "assessment") window.scrollTo({ top: 0, behavior: "auto" });
-  }, [screen]);
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, [screen, flow?.data.assessment.id]);
 
+  // The lobby and the waiting room follow the room by themselves: everyone moves
+  // into the questions when the host starts, and into the results when the last person finishes.
   useEffect(() => {
-    if (screen !== "lobby" || !room) return;
+    if ((screen !== "lobby" && screen !== "waiting") || !room) return;
     const code = room.room.code;
     let active = true;
-    const refreshLobby = () => {
+    const refresh = () => {
       if (!active || document.visibilityState === "hidden") return;
       void openRoom(code).catch(() => undefined);
     };
-    const interval = window.setInterval(refreshLobby, 4_000);
-    window.addEventListener("focus", refreshLobby);
-    document.addEventListener("visibilitychange", refreshLobby);
+    const interval = window.setInterval(refresh, 4_000);
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
     return () => {
       active = false;
       window.clearInterval(interval);
-      window.removeEventListener("focus", refreshLobby);
-      document.removeEventListener("visibilitychange", refreshLobby);
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", refresh);
     };
   }, [openRoom, room?.room.code, screen]);
-
-  useEffect(() => {
-    if (!confirmSubmit) return;
-    const previouslyFocused = document.activeElement as HTMLElement | null;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setConfirmSubmit(false);
-      if (event.key === "Tab") {
-        const modal = submitButtonRef.current?.closest(".modal");
-        const focusable = Array.from(modal?.querySelectorAll<HTMLElement>("button:not(:disabled)") || []);
-        if (!focusable.length) return;
-        const first = focusable[0];
-        const last = focusable[focusable.length - 1];
-        if (event.shiftKey && document.activeElement === first) {
-          event.preventDefault();
-          last.focus();
-        } else if (!event.shiftKey && document.activeElement === last) {
-          event.preventDefault();
-          first.focus();
-        }
-      }
-    };
-    document.addEventListener("keydown", onKeyDown);
-    submitButtonRef.current?.focus();
-    return () => {
-      document.removeEventListener("keydown", onKeyDown);
-      previouslyFocused?.focus();
-    };
-  }, [confirmSubmit]);
 
   async function enterRoom(event: React.FormEvent) {
     event.preventDefault();
@@ -336,7 +225,6 @@ function AsterAppContent() {
         body: JSON.stringify({ kind }),
       });
       await openRoom(data.code);
-      if (kind === "revealed") await openResults(data.code);
     } catch (caught) {
       setError(localizedError(caught, "error.demo"));
     } finally {
@@ -367,7 +255,7 @@ function AsterAppContent() {
     setError("");
     try {
       await request(`/api/rooms/${room.room.code}/start`, { method: "POST" });
-      await openRoom(room.room.code, "dashboard");
+      await openRoom(room.room.code);
     } catch (caught) {
       setError(localizedError(caught, "error.start"));
     } finally {
@@ -375,108 +263,22 @@ function AsterAppContent() {
     }
   }
 
-  async function openAssessment(id: string) {
-    setBusy(true);
-    setError("");
-    try {
-      const data = await request<AssessmentData>(`/api/assessments/${id}`);
-      setAssessment(data);
-      const firstUnanswered = SURVEY_QUESTIONS.findIndex((question) => data.answers[question.id] === undefined);
-      setPage(firstUnanswered === -1 ? 4 : Math.floor(firstUnanswered / 10));
-      setScreen("assessment");
-    } catch (caught) {
-      setError(localizedError(caught, "error.openAssessment"));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function saveAnswer(questionId: number, value: number) {
-    if (!assessment) return;
-    const previous = assessment.answers[questionId];
-    const assessmentId = assessment.assessment.id;
-    setAssessment((current) =>
-      current && current.assessment.id === assessmentId
-        ? { ...current, answers: { ...current.answers, [questionId]: value } }
-        : current,
-    );
-    if (pendingSaves.current === 0) saveHadError.current = false;
-    pendingSaves.current += 1;
-    setPendingSaveCount(pendingSaves.current);
-    setSaveState("saving");
-    const queuedSave = saveQueue.current.then(() =>
-      request(`/api/assessments/${assessmentId}`, {
-        method: "PATCH",
-        body: JSON.stringify({ questionId, value }),
-      }),
-    );
-    saveQueue.current = queuedSave.then(() => undefined, () => undefined);
-    try {
-      await queuedSave;
-    } catch {
-      saveHadError.current = true;
-      setAssessment((current) => {
-        if (!current || current.assessment.id !== assessmentId || current.answers[questionId] !== value) return current;
-        const answers = { ...current.answers };
-        if (previous === undefined) delete answers[questionId];
-        else answers[questionId] = previous;
-        return { ...current, answers };
-      });
-    } finally {
-      pendingSaves.current = Math.max(0, pendingSaves.current - 1);
-      setPendingSaveCount(pendingSaves.current);
-      if (pendingSaves.current === 0) setSaveState(saveHadError.current ? "error" : "saved");
-    }
-  }
-
-  async function submitAssessment() {
-    if (!assessment || !room || pendingSaves.current > 0) return;
-    setBusy(true);
-    setError("");
-    try {
-      const outcome = await request<{ revealed: boolean }>(`/api/assessments/${assessment.assessment.id}/submit`, {
-        method: "POST",
-      });
-      setConfirmSubmit(false);
-      await openRoom(room.room.code, "dashboard");
-      setNotice(outcome.revealed ? t("notice.circleComplete") : t("notice.submitted"));
-    } catch (caught) {
-      setError(localizedError(caught, "error.submit"));
-      setConfirmSubmit(false);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function openResults(code = room?.room.code) {
-    if (!code) return;
-    setBusy(true);
-    setError("");
-    try {
-      const data = await request<ResultsData>(`/api/rooms/${code}/results`);
-      setResults(data);
-      setScreen("results");
-    } catch (caught) {
-      setError(localizedError(caught, "error.resultsSealed"));
-    } finally {
-      setBusy(false);
-    }
-  }
-
   function leaveToHome() {
     setRoom(null);
-    setAssessment(null);
+    setFlow(null);
     setResults(null);
     setScreen("home");
     window.history.replaceState({}, "", "/");
   }
 
+  const roomPage = screen === "flow" || screen === "waiting" || screen === "results";
+
   return (
-    <main className={`app-shell screen-${screen}`}>
+    <main className={`app-shell screen-${screen}${roomPage ? " bloom-shell" : ""}`}>
       {busy && <div className="loading-line" aria-label={t("common.loading")} />}
       {screen !== "home" && room && (
         <header className="app-header">
-          <button className="wordmark" onClick={() => setScreen(room.room.status === "lobby" ? "lobby" : "dashboard")}>
+          <button className="wordmark" onClick={() => void openRoom(room.room.code).catch(() => undefined)}>
             <BrandMark small />
             <span>{t("common.brand")}</span>
           </button>
@@ -509,47 +311,24 @@ function AsterAppContent() {
       {screen === "lobby" && room && (
         <LobbyScreen room={room} copyInvite={copyInvite} copyRecovery={copyRecovery} startCircle={startCircle} busy={busy} error={error} />
       )}
-      {screen === "dashboard" && room && (
-        <DashboardScreen
-          room={room}
-          openAssessment={openAssessment}
-          openResults={() => openResults()}
-          refresh={() => openRoom(room.room.code, "dashboard")}
-          openDemoResults={() => openDemo("revealed")}
-          error={error}
-        />
-      )}
-      {screen === "assessment" && assessment && room && (
-        <AssessmentScreen
-          data={assessment}
-          page={page}
-          setPage={setPage}
-          saveAnswer={saveAnswer}
-          saveState={saveState}
-          pendingSaveCount={pendingSaveCount}
-          back={() => openRoom(room.room.code, "dashboard")}
-          onReviewSubmit={() => setConfirmSubmit(true)}
-          error={error}
-        />
-      )}
-      {screen === "results" && results && room && (
-        <ResultsScreen results={results} back={() => setScreen("dashboard")} />
+      {roomPage && room && (
+        <div className="bloom-page">
+          {screen === "flow" && flow && (
+            <RoomFlow
+              key={flow.data.assessment.id}
+              room={room}
+              data={flow.data}
+              step={flow.step}
+              onFinished={() => openRoom(room.room.code)}
+              onSkipDemo={() => openDemo("revealed")}
+            />
+          )}
+          {screen === "waiting" && <WaitingRoom room={room} onSkipDemo={() => openDemo("revealed")} />}
+          {screen === "results" && results && <RoomResults results={results} />}
+        </div>
       )}
 
       {notice && <div className="toast"><CheckIcon />{notice}</div>}
-      {confirmSubmit && assessment && (
-        <div className="modal-backdrop" role="presentation" onMouseDown={() => setConfirmSubmit(false)}>
-          <div className="modal" role="dialog" aria-modal="true" aria-labelledby="submit-title" onMouseDown={(event) => event.stopPropagation()}>
-            <span className="eyebrow">{t("submit.eyebrow")}</span>
-            <h2 id="submit-title">{t("submit.title")}</h2>
-            <p>{t("submit.body", { name: assessment.assessment.targetName })}</p>
-            <div className="modal-actions">
-              <button className="button secondary" onClick={() => setConfirmSubmit(false)}>{t("action.keepReviewing")}</button>
-              <button ref={submitButtonRef} className="button primary" onClick={submitAssessment} disabled={busy || pendingSaveCount > 0}>{t("action.submit")} <ArrowIcon /></button>
-            </div>
-          </div>
-        </div>
-      )}
     </main>
   );
 }
@@ -700,7 +479,7 @@ function LobbyScreen({ room, copyInvite, copyRecovery, startCircle, busy, error 
             <span className="note-flower"><BloomOrnament /></span>
             <span className="card-kicker">{t("lobby.before")}</span>
             <h3>{t("lobby.honesty")}</h3>
-            <ul><li>{t("lobby.ruleNamed")}</li><li>{t("lobby.rulePrivate")}</li><li>{t("lobby.ruleReveal")}</li></ul>
+            <ul><li>{t("lobby.ruleFlow", { count: SURVEY_LENGTH })}</li><li>{t("lobby.ruleNamed")}</li><li>{t("lobby.rulePrivate")}</li><li>{t("lobby.ruleReveal")}</li></ul>
           </div>
           {error && <p className="form-error">{error}</p>}
           {room.me.isHost ? (
@@ -711,233 +490,6 @@ function LobbyScreen({ room, copyInvite, copyRecovery, startCircle, busy, error 
           {!room.room.isDemo && <button className="button secondary wide" onClick={copyRecovery}>{t("action.copyLink")}</button>}
           {room.members.length < 2 && room.me.isHost && <p className="helper centered">{t("lobby.needFriend")}</p>}
         </aside>
-      </div>
-    </div>
-  );
-}
-
-function DashboardScreen({ room, openAssessment, openResults, refresh, openDemoResults, error }: { room: RoomData; openAssessment: (id: string) => void; openResults: () => void; refresh: () => void; openDemoResults: () => void; error: string }) {
-  const { t } = useI18n();
-  const friendAssessments = room.assessments.filter((item) => !item.isSelf);
-  const selfAssessment = room.assessments.find((item) => item.isSelf);
-  const answered = friendAssessments.reduce((sum, item) => sum + item.answerCount, 0);
-  const total = friendAssessments.length * SURVEY_LENGTH;
-  const completed = friendAssessments.filter((item) => item.status === "submitted").length;
-  const allMineComplete = completed === friendAssessments.length;
-  const roomRequired = room.members.reduce((sum, member) => sum + member.requiredTotal, 0);
-  const roomDone = room.members.reduce((sum, member) => sum + member.requiredDone, 0);
-
-  return (
-    <div className="page-container dashboard-page">
-      <section className="dashboard-hero">
-        <div><span className="eyebrow">{t("dashboard.eyebrow")}</span><h1>{room.room.status === "revealed" ? t("dashboard.openTitle") : t("dashboard.greeting", { name: room.me.nickname })}</h1><p>{room.room.status === "revealed" ? t("dashboard.openBody") : t("dashboard.activeBody")}</p></div>
-        <ProgressRing value={room.room.status === "revealed" ? 100 : total ? (answered / total) * 100 : 0} label={room.room.status === "revealed" ? t("common.ready") : t("dashboard.progress")} />
-      </section>
-
-      {room.room.status === "revealed" && (
-        <section className="reveal-banner">
-          <div className="mini-bloom"><BloomOrnament /></div>
-          <div><span className="eyebrow">{t("dashboard.petals")}</span><h2>{t("dashboard.resultsReady")}</h2><p>{t("dashboard.resultsBody")}</p></div>
-          <button className="button ink" onClick={openResults}>{t("dashboard.openResults")} <ArrowIcon /></button>
-        </section>
-      )}
-
-      <section className="section-block">
-        <div className="section-heading"><div><span className="card-kicker">{t("dashboard.required", { done: completed, total: friendAssessments.length })}</span><h2>{t("dashboard.friendsQuestion")}</h2></div><span className="autosave-note">{t("status.autoSave")}</span></div>
-        <div className="assessment-grid">
-          {friendAssessments.map((item, index) => (
-            <button className={`assessment-card ${item.status}`} key={item.id} onClick={() => item.status !== "submitted" && openAssessment(item.id)} disabled={item.status === "submitted"}>
-              <div className="assessment-card-top"><span className={`avatar ${avatarColors[(index + 1) % avatarColors.length]}`}>{initials(item.targetName)}</span><StatusPill status={item.status} /></div>
-              <div><h3>{item.targetName}</h3><p>{item.status === "submitted" ? t("dashboard.perspectiveShared") : t("dashboard.answerCount", { done: item.answerCount, total: SURVEY_LENGTH })}</p></div>
-              <div className="card-progress"><i style={{ width: `${(item.answerCount / SURVEY_LENGTH) * 100}%` }} /></div>
-              {item.status !== "submitted" && <span className="card-action">{item.status === "not_started" ? t("action.begin") : t("action.continue")} <ArrowIcon /></span>}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {selfAssessment && (
-        <section className="self-card">
-          <div className="self-ornament"><BloomOrnament /></div>
-          <div><span className="card-kicker">{t("dashboard.optional")}</span><h2>{t("dashboard.selfQuestion")}</h2><p>{t("dashboard.selfBody")}</p></div>
-          <div className="self-actions"><StatusPill status={selfAssessment.status} />{selfAssessment.status !== "submitted" && <button className="button secondary" onClick={() => openAssessment(selfAssessment.id)}>{selfAssessment.answerCount ? t("action.continue") : t("dashboard.selfBegin")} <ArrowIcon /></button>}</div>
-        </section>
-      )}
-
-      <section className="room-progress panel">
-        <div className="section-heading compact"><div><span className="card-kicker">{t("dashboard.roomProgress")}</span><h2>{t("dashboard.sharedCount", { done: roomDone, total: roomRequired })}</h2></div><button className="text-button" onClick={refresh}>{t("action.refresh")}</button></div>
-        <div className="room-progress-bar"><i style={{ width: `${roomRequired ? (roomDone / roomRequired) * 100 : 0}%` }} /></div>
-        <div className="room-member-progress">
-          {room.members.map((member, index) => (
-            <div key={member.id}><span className={`avatar avatar-small ${avatarColors[index % avatarColors.length]}`}>{initials(member.nickname)}</span><span><strong>{member.nickname}</strong><small>{t("dashboard.memberDone", { done: member.requiredDone, total: member.requiredTotal })}</small></span>{member.requiredDone === member.requiredTotal ? <CheckIcon /> : <span className="tiny-progress">{member.requiredTotal ? Math.round((member.requiredDone / member.requiredTotal) * 100) : 0}%</span>}</div>
-          ))}
-        </div>
-        {allMineComplete && room.room.status !== "revealed" && <p className="waiting-copy"><span className="pulse" /> {t("dashboard.mineDone")}</p>}
-      </section>
-      {room.room.isDemo && room.room.status !== "revealed" && (
-        <button className="demo-results-link" onClick={openDemoResults}>{t("dashboard.skipDemo")} <ArrowIcon /></button>
-      )}
-      {error && <p className="form-error centered">{error}</p>}
-    </div>
-  );
-}
-
-function AssessmentScreen({ data, page, setPage, saveAnswer, saveState, pendingSaveCount, back, onReviewSubmit, error }: { data: AssessmentData; page: number; setPage: (page: number) => void; saveAnswer: (questionId: number, value: number) => void; saveState: "saved" | "saving" | "error"; pendingSaveCount: number; back: () => void; onReviewSubmit: () => void; error: string }) {
-  const { locale, t } = useI18n();
-  const questions = SURVEY_QUESTIONS.slice(page * 10, page * 10 + 10);
-  const answeredCount = Object.keys(data.answers).length;
-  const pageAnswered = questions.filter((question) => data.answers[question.id] !== undefined).length;
-  const lastPage = page === Math.ceil(SURVEY_LENGTH / 10) - 1;
-
-  function nextPage() {
-    setPage(Math.min(4, page + 1));
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-  function previousPage() {
-    setPage(Math.max(0, page - 1));
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
-  return (
-    <div className="assessment-page">
-      <aside className="assessment-sidebar">
-        <button className="back-link" onClick={back}><ArrowIcon direction="left" /> {t("action.saveLeave")}</button>
-        <div className="assessing-person"><span className="avatar lilac">{initials(data.assessment.targetName)}</span><span className="card-kicker">{data.assessment.isSelf ? t("assessment.self") : t("assessment.friend")}</span><h1>{data.assessment.targetName}</h1><p>{data.assessment.isSelf ? t("assessment.selfHint") : t("assessment.friendHint")}</p></div>
-        <div className="side-progress"><span>{t("assessment.answered", { done: answeredCount, total: SURVEY_LENGTH })}</span><div><i style={{ width: `${(answeredCount / SURVEY_LENGTH) * 100}%` }} /></div></div>
-        <div className="privacy-seal"><span>✣</span><p><strong>{t("assessment.privateTitle")}</strong> {t("assessment.privateBody")}</p></div>
-      </aside>
-      <section className="question-area">
-        <header className="question-header">
-          <div><span className="eyebrow">{t("assessment.part", { part: page + 1, total: 5 })}</span><h2>{t("assessment.notice")}</h2></div>
-          <div className={`save-state ${saveState}`}><span />{saveState === "saving" ? t("status.saving") : saveState === "error" ? t("status.notSaved") : t("status.saved")}</div>
-        </header>
-        <div className="scale-legend"><span>{t("assessment.disagree")}</span><i /><span>{t("assessment.agree")}</span><span className="legend-unsure">{t("assessment.notSure")}</span></div>
-        <div className="questions-list">
-          {questions.map((question, index) => (
-            <article className="question-card" key={question.id}>
-              <div className="question-copy"><span>{page * 10 + index + 1}</span><p>{translateQuestion(question.id, question.text, data.assessment.targetName, data.assessment.isSelf, locale)}</p></div>
-              <div className="response-scale" role="radiogroup" aria-label={t("assessment.responseAria", { number: page * 10 + index + 1 })}>
-                {responseOptions.map((option, optionIndex) => (
-                  <button
-                    key={option.value}
-                    className={`${option.value === 0 ? "unsure" : ""} ${data.answers[question.id] === option.value ? "selected" : ""}`}
-                    onClick={() => saveAnswer(question.id, option.value)}
-                    role="radio"
-                    aria-checked={data.answers[question.id] === option.value}
-                    aria-label={t(option.label)}
-                    title={t(option.label)}
-                    tabIndex={data.answers[question.id] === option.value || (data.answers[question.id] === undefined && optionIndex === 0) ? 0 : -1}
-                    onKeyDown={(event) => {
-                      const delta = event.key === "ArrowRight" || event.key === "ArrowDown" ? 1 : event.key === "ArrowLeft" || event.key === "ArrowUp" ? -1 : 0;
-                      if (!delta) return;
-                      event.preventDefault();
-                      const nextIndex = (optionIndex + delta + responseOptions.length) % responseOptions.length;
-                      saveAnswer(question.id, responseOptions[nextIndex].value);
-                      event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>("button")[nextIndex]?.focus();
-                    }}
-                  >
-                    <span>{option.compact}</span><small>{option.value === 0 ? t("assessment.unsure") : option.value}</small>
-                  </button>
-                ))}
-              </div>
-            </article>
-          ))}
-        </div>
-        {error && <p className="form-error">{error}</p>}
-        <footer className="question-footer">
-          <button className="button secondary" onClick={previousPage} disabled={page === 0}><ArrowIcon direction="left" /> {t("action.previous")}</button>
-          <span>{t("assessment.answeredHere", { done: pageAnswered })}</span>
-          {lastPage ? (
-            <button className="button primary" onClick={onReviewSubmit} disabled={answeredCount !== SURVEY_LENGTH || pendingSaveCount > 0}>{t("action.reviewSubmit")} <ArrowIcon /></button>
-          ) : (
-            <button className="button primary" onClick={nextPage}>{t("action.nextTen")} <ArrowIcon /></button>
-          )}
-        </footer>
-        {lastPage && answeredCount !== SURVEY_LENGTH && <p className="submit-helper">{t("assessment.submitHint", { total: SURVEY_LENGTH })}</p>}
-      </section>
-    </div>
-  );
-}
-
-function ResultsScreen({ results, back }: { results: ResultsData; back: () => void }) {
-  const { t } = useI18n();
-  const me = results.people.find((person) => person.isMe)!;
-  const dimensionLabels: Record<string, { title: string; left: string; right: string }> = {
-    EI: { title: t("results.social"), left: t("results.extraverted"), right: t("results.introverted") },
-    SN: { title: t("results.information"), left: t("results.observant"), right: t("results.imaginative") },
-    TF: { title: t("results.decisions"), left: t("results.analytical"), right: t("results.valuesLed") },
-    JP: { title: t("results.structure"), left: t("results.planned"), right: t("results.flexible") },
-  };
-  const variations = Object.keys(dimensionLabels).flatMap((dimension) => {
-    const scores = me.perspectives
-      .map((perspective) => perspective.profile.dimensions[dimension]?.score)
-      .filter((score): score is number => score !== undefined);
-    return scores.length ? [{ dimension, range: Math.max(...scores) - Math.min(...scores) }] : [];
-  }).sort((a, b) => a.range - b.range);
-  const mostAgreed = variations[0];
-  const mostVaried = variations[variations.length - 1];
-  const formatScores = (profile: CompactProfile) => ["EI", "SN", "TF", "JP"]
-    .map((dimension) => `${dimension} ${profile.dimensions[dimension] ? Math.round(profile.dimensions[dimension]!.score) : "—"}`)
-    .join(" · ");
-
-  return (
-    <div className="results-page">
-      <div className="results-hero">
-        <div className="results-hero-copy">
-          <button className="back-link light" onClick={back}><ArrowIcon direction="left" /> {t("action.backRoom")}</button>
-          <span className="eyebrow">{t("results.reflection", { name: me.nickname })}</span>
-          <h1>{me.overall.type ? t("results.headline", { type: me.overall.type }) : t("results.insufficientHeadline")}</h1>
-          <p>{!me.overall.type ? t("results.insufficientBody") : me.overall.closelyBalancedDimensions.length ? t("results.balanced", { dimensions: me.overall.closelyBalancedDimensions.join(" / ") }) : t("results.clear")}</p>
-          <div className="result-meta"><span><strong>{me.perspectives.length}</strong> {t("results.friendCount")}</span><span><strong>50</strong> {t("results.signals")}</span><span><strong>1</strong> {t("results.portrait")}</span></div>
-        </div>
-        <div className="result-flower-card">
-          <FlowerIllustration names={me.perspectives.map((item) => item.reviewerName)} />
-          <span className="flower-caption">{t("results.petalCaption")}</span>
-        </div>
-      </div>
-
-      <div className="results-content">
-        <section className="result-section dimension-section">
-          <div className="section-heading"><div><span className="eyebrow">{t("results.dimensions")}</span><h2>{t("results.compare")}</h2></div><div className="bar-key"><span className="friends-key">{t("common.friends")}</span>{me.self && <span className="self-key">{t("common.self")}</span>}</div></div>
-          <div className="dimension-list">
-            {Object.entries(dimensionLabels).map(([dimension, labels]) => {
-              const friendDimension = me.overall.dimensions[dimension];
-              const friendScore = friendDimension?.score;
-              const selfScore = me.self?.dimensions[dimension]?.score;
-              return (
-                <div className="dimension-row" key={dimension}>
-                  <div className="dimension-title"><span>{dimension}</span><div><strong>{labels.title}</strong>{friendDimension?.closelyBalanced && <small>{t("results.balancedShort")}</small>}</div></div>
-                  <div className="dimension-plot">
-                    <div className="dimension-labels"><span>{labels.left}</span><span>{labels.right}</span></div>
-                    <div className="dimension-track"><i className="midline" />{friendScore !== undefined && <span className="friend-marker" style={{ left: `${friendScore}%` }} title={`${t("common.friends")}: ${friendScore}`} />}{selfScore !== undefined && <span className="self-marker" style={{ left: `${selfScore}%` }} title={`${t("common.self")}: ${selfScore}`} />}</div>
-                    <div className="dimension-values"><span>{t("common.friends")} <strong>{friendScore === undefined ? "—" : Math.round(friendScore)}</strong></span>{me.self && <span>{t("common.self")} <strong>{selfScore === undefined ? "—" : Math.round(selfScore)}</strong></span>}</div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        {mostAgreed && mostVaried && <div className="insight-grid">
-          <article className="insight-card agree"><span className="insight-symbol">✣</span><span className="card-kicker">{t("results.align")}</span><h3>{dimensionLabels[mostAgreed.dimension].title}</h3><p>{t("results.alignBody", { range: Math.round(mostAgreed.range) })}</p></article>
-          <article className="insight-card differ"><span className="insight-symbol">↝</span><span className="card-kicker">{t("results.nuance")}</span><h3>{dimensionLabels[mostVaried.dimension].title}</h3><p>{t("results.nuanceBody", { range: Math.round(mostVaried.range) })}</p></article>
-        </div>}
-
-        <section className="result-section perspectives-section">
-          <div className="section-heading"><div><span className="eyebrow">{t("results.petalByPetal")}</span><h2>{t("results.every")}</h2></div><p>{t("results.scoreMethod")}</p></div>
-          <div className="perspective-table">
-            {me.perspectives.map((perspective, index) => (
-              <div key={perspective.reviewerName}><span className={`avatar ${avatarColors[index % avatarColors.length]}`}>{initials(perspective.reviewerName)}</span><span><strong>{perspective.reviewerName}</strong><small>{t("results.seesAs")}</small></span><b>{perspective.profile.type || "—"}</b><button title={t("results.exactScores")} aria-label={`${t("results.exactScores")}: ${perspective.reviewerName}`}>{formatScores(perspective.profile)}</button></div>
-            ))}
-            {me.self && <div className="self-perspective"><span className="avatar ink">{initials(me.nickname)}</span><span><strong>{t("common.self")}</strong><small>{t("results.selfSeesAs")}</small></span><b>{me.self.type || "—"}</b><button aria-label={t("results.exactScores")}>{formatScores(me.self)}</button></div>}
-          </div>
-        </section>
-
-        <section className="room-summary">
-          <div><span className="eyebrow">{t("results.aroundRoom")}</span><h2>{t("results.circleBloom")}</h2><p>{t("results.summaryPrivacy")}</p></div>
-          <div className="type-garden">{results.people.map((person, index) => <article key={person.id}><span className={`avatar ${avatarColors[index % avatarColors.length]}`}>{initials(person.nickname)}</span><div><strong>{person.nickname}{person.isMe && ` · ${t("common.you")}`}</strong><span>{t("results.perspectiveCount", { count: person.overall.contributingReviewerCount })}</span></div><b>{person.overall.type || "—"}</b></article>)}</div>
-        </section>
-        <p className="disclaimer">{t("results.disclaimer")}</p>
       </div>
     </div>
   );

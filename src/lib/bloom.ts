@@ -276,9 +276,18 @@ export type Flower = (typeof FLOWERS)[number];
  */
 export function responseSimilarity(selfType: string, answers: BloomAnswers): number {
   const scores = axisScores(answers);
+  return scoreSimilarity(selfType, Object.fromEntries(DIMENSIONS.map((dimension) => [dimension, scores[dimension]?.score])));
+}
+
+/**
+ * The same measure from 0–100 axis scores (over 50 favours the second
+ * letter), for views scored elsewhere, such as a room's perspectives. A
+ * missing axis counts as halfway.
+ */
+export function scoreSimilarity(selfType: string, scores: Partial<Record<Dimension, number | null | undefined>>): number {
   const leans = DIMENSIONS.map((dimension, index) => {
-    const score = scores[dimension]?.score;
-    if (score === undefined) return 50;
+    const score = scores[dimension];
+    if (score === undefined || score === null) return 50;
     return selfType[index] === AXIS_POLES[dimension][0] ? 100 - score : score;
   });
   return Math.round(leans.reduce((sum, lean) => sum + lean, 0) / leans.length);

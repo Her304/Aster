@@ -468,7 +468,8 @@ export async function getRoomParticipants(roomId: string, executor?: DbExecutor)
   const database = executor || rootExecutor();
   if (!executor) await ready();
   return database.all<ParticipantRow>(
-    "SELECT id, room_id, nickname, created_at FROM participants WHERE room_id = ? ORDER BY created_at",
+    // Ties broken by id so everyone sees, and answers about, friends in the same order.
+    "SELECT id, room_id, nickname, created_at FROM participants WHERE room_id = ? ORDER BY created_at, id",
     [roomId],
   );
 }
@@ -500,7 +501,7 @@ export async function getAssessmentsForReviewer(roomId: string, reviewerId: stri
      LEFT JOIN answers ans ON ans.assessment_id = a.id
      WHERE a.room_id = ? AND a.reviewer_id = ?
      GROUP BY a.id, p.nickname, p.created_at
-     ORDER BY a.is_self, p.created_at`,
+     ORDER BY a.is_self DESC, p.created_at, p.id`,
     [roomId, reviewerId],
   );
   return rows.map((row) => ({ ...row, answer_count: Number(row.answer_count || 0) }));
@@ -526,8 +527,8 @@ export async function getAssessment(assessmentId: string, executor?: DbExecutor)
 export async function roomCompletion(roomId: string) {
   const rows = await queryAll<{ reviewer_id: string; required_total: number | string; required_done: number | string }>(
     `SELECT reviewer_id,
-       SUM(CASE WHEN is_self = 0 THEN 1 ELSE 0 END) AS required_total,
-       SUM(CASE WHEN is_self = 0 AND status = 'submitted' THEN 1 ELSE 0 END) AS required_done
+       COUNT(*) AS required_total,
+       SUM(CASE WHEN status = 'submitted' THEN 1 ELSE 0 END) AS required_done
      FROM assessments WHERE room_id = ? GROUP BY reviewer_id`,
     [roomId],
   );
@@ -544,7 +545,7 @@ export async function maybeRevealRoom(roomId: string, executor?: DbExecutor) {
   const counts = await database.get<{ total: number | string; done: number | string | null }>(
     `SELECT COUNT(*) AS total,
        SUM(CASE WHEN status = 'submitted' THEN 1 ELSE 0 END) AS done
-     FROM assessments WHERE room_id = ? AND is_self = 0`,
+     FROM assessments WHERE room_id = ?`,
     [roomId],
   );
   const total = Number(counts?.total || 0);

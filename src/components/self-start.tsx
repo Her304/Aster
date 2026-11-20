@@ -60,7 +60,7 @@ function goToBloom(type: string, answers?: BloomAnswers) {
 
 /**
  * The /start page's "how do you see yourself?" step: tick four letters, or
- * take the 80-question test, then carry the result into a Bloom survey.
+ * take the 16-question test, then carry the result into a Bloom survey.
  */
 export function SelfStart() {
   const b = useBloomCopy();

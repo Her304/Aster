@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAssessment, locking, queryAll, transaction } from "@/lib/db";
 import { error } from "@/lib/http";
 import { currentParticipant } from "@/lib/session";
-import { SURVEY_QUESTIONS } from "@/lib/survey";
+import { SURVEY_QUESTION_IDS } from "@/lib/survey";
 
 export const runtime = "nodejs";
 
@@ -32,7 +32,12 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       isSelf: Boolean(access.assessment!.is_self),
       status: access.assessment!.status,
     },
-    answers: Object.fromEntries(answers.map((answer) => [answer.question_id, answer.value])),
+    // Rooms begun on the longer survey may hold answers to prompts no longer asked.
+    answers: Object.fromEntries(
+      answers
+        .filter((answer) => SURVEY_QUESTION_IDS.has(Number(answer.question_id)))
+        .map((answer) => [answer.question_id, answer.value]),
+    ),
   });
 }
 
@@ -45,7 +50,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const body = await request.json().catch(() => ({}));
   const questionId = Number(body.questionId);
   const value = Number(body.value);
-  if (!SURVEY_QUESTIONS.some((question) => question.id === questionId)) return error("Unknown question.");
+  if (!SURVEY_QUESTION_IDS.has(questionId)) return error("Unknown question.");
   if (!Number.isInteger(value) || value < 0 || value > 5) return error("Choose a valid response.");
 
   let submitted = false;

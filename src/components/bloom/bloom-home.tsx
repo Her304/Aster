@@ -131,7 +131,7 @@ function Setup({ signedIn, onCreated }: { signedIn: boolean; onCreated: () => Pr
     }
     const prefill = params.get("name");
     if (prefill) setDisplayName(prefill.slice(0, 24));
-    // Letters ticked, or the 80-question test taken, on the home page.
+    // Letters ticked, or the 16-question self-test taken, on /start.
     const view = loadSelfView();
     if (view) {
       setSelfType(view.type);

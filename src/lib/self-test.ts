@@ -1,37 +1,17 @@
-import { QUESTION_BANK, type Question } from "../data/questions";
-import { BLOOM_QUESTION_IDS, isPersonalityType, type BloomAnswers, type Tiebreaks } from "./bloom";
-import { selectedQuestionIds, selfTestExtraQuestionIds } from "./i18n";
+import type { Question } from "../data/questions";
+import { BLOOM_QUESTIONS, BLOOM_QUESTION_IDS, isPersonalityType, type BloomAnswers, type Tiebreaks } from "./bloom";
 import { DIMENSIONS, scoreAssessment, type Dimension, type PreferenceLetter, type ScoredProfile } from "./scoring";
 
 /**
- * The 80-question self-test on the home page: twenty prompts per axis, ten
- * favouring each pole, all translated into every supported language. Answers
- * use the Bloom scale (1–5, or 0 for "not sure") so the sixteen Bloom prompts
- * among them can carry straight into a Bloom survey.
+ * The self-test on /start: the same sixteen prompts, in the same order, that
+ * respondents answer about the person (four per axis, two favouring each
+ * pole), so both sides compare like with like. Answers use the Bloom scale
+ * (1–5, or 0 for "not sure") and carry straight into a Bloom survey.
  */
-
-const SELF_TEST_IDS = new Set<number>([...selectedQuestionIds, ...selfTestExtraQuestionIds]);
-
-/** Interleaved E/I, S/N, T/F, J/P, alternating poles, so no stretch of the test dwells on one axis. */
-export const SELF_TEST_QUESTIONS: readonly Question[] = (() => {
-  const byAxisAndPole = DIMENSIONS.map((dimension) => {
-    const [first, second] = dimension.split("");
-    const pick = (pole: string) =>
-      QUESTION_BANK.filter((question) => SELF_TEST_IDS.has(question.id) && question.dimension === dimension && question.positivePole === pole);
-    return [pick(first), pick(second)] as const;
-  });
-  const ordered: Question[] = [];
-  for (let index = 0; index < 10; index += 1) {
-    for (const [first, second] of byAxisAndPole) {
-      const pair = index % 2 === 0 ? [first[index], second[index]] : [second[index], first[index]];
-      ordered.push(...pair.filter(Boolean));
-    }
-  }
-  return ordered;
-})();
+export const SELF_TEST_QUESTIONS: readonly Question[] = BLOOM_QUESTIONS;
 
 export const SELF_TEST_LENGTH = SELF_TEST_QUESTIONS.length;
-export const SELF_TEST_PAGE_SIZE = 10;
+export const SELF_TEST_PAGE_SIZE = 8;
 export const SELF_TEST_PAGES = Math.ceil(SELF_TEST_LENGTH / SELF_TEST_PAGE_SIZE);
 
 export function scoreSelfTest(answers: BloomAnswers): ScoredProfile {
@@ -70,7 +50,7 @@ export function selfTestResult(answers: BloomAnswers): SelfTestResult {
 /** What the home page hands to /bloom so nobody answers twice. */
 export interface SelfView {
   type: string;
-  /** Present only when the type came from the 80-question test. */
+  /** Present only when the type came from the self-test. */
   answers?: BloomAnswers;
 }
 
@@ -103,8 +83,8 @@ export function clearSelfView() {
 }
 
 /**
- * The sixteen Bloom answers inside a finished self-test, with tie-breaks taken
- * from the test's own letters for any axis those sixteen alone leave even.
+ * The sixteen Bloom answers from a finished self-test, with tie-breaks taken
+ * from the letters the person settled for any axis the answers leave even.
  */
 export function bloomSelfAnswers(view: SelfView): { answers: BloomAnswers; tiebreaks: Tiebreaks } | null {
   if (!view.answers) return null;
