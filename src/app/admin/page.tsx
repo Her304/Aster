@@ -14,7 +14,50 @@ interface Overview {
   roomsLast24h: number;
   roomsLast7d: number;
   participantsLast24h: number;
+  accounts: number;
+  accountsLast7d: number;
+  surveys: number;
+  surveyResponses: number;
 }
+
+interface UserRow {
+  id: string;
+  email: string;
+  createdAt: string;
+  lastSignInAt: string | null;
+  activeSessions: number;
+  survey: { code: string; displayName: string; selfType: string; status: string } | null;
+  responsesReceived: number;
+  answersGiven: number;
+}
+
+interface UserDetail {
+  user: { id: string; email: string; createdAt: string; linkedBrowsers: number };
+  sessions: Array<{ createdAt: string; expiresAt: string; active: boolean }>;
+  survey: {
+    code: string;
+    displayName: string;
+    selfType: string;
+    selfTestType: string | null;
+    status: string;
+    boardPublic: boolean;
+    notify: boolean;
+    notifiedLevel: number;
+    locale: string;
+    createdAt: string;
+    responses: Array<{ name: string; relation: string; type: string; signedIn: boolean; submittedAt: string }>;
+  } | null;
+  answersGiven: Array<{ surveyCode: string; ownerName: string; answeredAs: string; relation: string; type: string; submittedAt: string }>;
+}
+
+const RELATION_LABEL: Record<string, string> = {
+  family: "Family",
+  close_friend: "Close friend",
+  classmate: "Classmate",
+  colleague: "Colleague",
+  online: "Online friend",
+  other: "Other",
+};
 
 interface RoomRow {
   id: string;
@@ -85,6 +128,13 @@ export default function AdminPage() {
   const [detail, setDetail] = useState<RoomDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const detailRef = useRef<HTMLElement | null>(null);
+  const [users, setUsers] = useState<UserRow[]>([]);
+  const [userTotal, setUserTotal] = useState(0);
+  const [userSearch, setUserSearch] = useState("");
+  const [userPage, setUserPage] = useState(0);
+  const [userDetail, setUserDetail] = useState<UserDetail | null>(null);
+  const [userLoading, setUserLoading] = useState(false);
+  const userDetailRef = useRef<HTMLElement | null>(null);
 
   const limit = 50;
 
@@ -127,11 +177,41 @@ export default function AdminPage() {
     })();
   }, []);
 
+  const loadUsers = useCallback(async () => {
+    const params = new URLSearchParams({ limit: String(limit), offset: String(userPage * limit) });
+    if (userSearch.trim()) params.set("q", userSearch.trim());
+    const response = await fetch(`/api/admin/users?${params}`, { cache: "no-store" });
+    if (response.status === 401) return setSignedIn(false);
+    if (response.ok) {
+      const body = await response.json();
+      setUsers(body.users);
+      setUserTotal(body.total);
+    }
+  }, [userPage, userSearch]);
+
+  async function openUser(id: string) {
+    setUserLoading(true);
+    try {
+      const response = await fetch(`/api/admin/users/${encodeURIComponent(id)}`, { cache: "no-store" });
+      if (response.ok) setUserDetail(await response.json());
+    } finally {
+      setUserLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (userDetail) userDetailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [userDetail]);
+
   useEffect(() => {
     if (!signedIn) return;
     loadOverview();
     loadRooms();
   }, [signedIn, loadOverview, loadRooms]);
+
+  useEffect(() => {
+    if (signedIn) loadUsers();
+  }, [signedIn, loadUsers]);
 
   async function signIn(event: React.FormEvent) {
     event.preventDefault();
@@ -156,6 +236,8 @@ export default function AdminPage() {
     setOverview(null);
     setRooms([]);
     setDetail(null);
+    setUsers([]);
+    setUserDetail(null);
   }
 
   async function openRoom(code: string) {
@@ -259,7 +341,7 @@ export default function AdminPage() {
           <h1>Console</h1>
         </div>
         <div className="admin-head-actions">
-          <button className="button secondary" onClick={() => { loadOverview(); loadRooms(); }}>
+          <button className="button secondary" onClick={() => { loadOverview(); loadRooms(); loadUsers(); }}>
             Refresh
           </button>
           <button className="button secondary" onClick={signOut}>
@@ -276,6 +358,8 @@ export default function AdminPage() {
             ["Assessments", overview.assessments, `${overview.submittedAssessments} submitted`],
             ["Answers", overview.answers, `${overview.revealedRooms} rooms revealed`],
             ["Rooms (7d)", overview.roomsLast7d, ""],
+            ["Accounts", overview.accounts, `${overview.accountsLast7d} new in 7d · ${overview.surveys} surveys`],
+            ["Survey answers", overview.surveyResponses, "answers to open-link surveys"],
           ].map(([label, value, note]) => (
             <article key={label as string} className="admin-stat">
               <span className="card-kicker">{label as string}</span>
@@ -439,6 +523,189 @@ export default function AdminPage() {
           </div>
         </section>
       ) : null}
+      <section className="admin-accounts">
+        <h2 className="admin-section-title">Accounts</h2>
+        <div className="admin-tools">
+          <label className="field admin-search">
+            Email
+            <input
+              type="search"
+              placeholder="name@example.com"
+              value={userSearch}
+              onChange={(event) => {
+                setUserSearch(event.target.value);
+                setUserPage(0);
+              }}
+            />
+          </label>
+          <small className="admin-total">{userTotal.toLocaleString()} accounts</small>
+        </div>
+
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Survey</th>
+              <th>Answers received</th>
+              <th>Answers given</th>
+              <th>Last sign-in</th>
+              <th>Joined</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {users.map((user) => (
+              <tr key={user.id} className={userDetail?.user.id === user.id ? "admin-active-row" : undefined}>
+                <td>{user.email}</td>
+                <td>
+                  {user.survey ? (
+                    <>
+                      <span className="admin-code-inline">{user.survey.code}</span> {user.survey.displayName} · {user.survey.selfType}
+                      {user.survey.status === "closed" ? <em className="admin-demo-tag">closed</em> : null}
+                    </>
+                  ) : (
+                    "—"
+                  )}
+                </td>
+                <td>{user.survey ? user.responsesReceived : "—"}</td>
+                <td>{user.answersGiven}</td>
+                <td>
+                  {user.lastSignInAt ? formatWhen(user.lastSignInAt) : "—"}
+                  {user.activeSessions ? <small className="admin-subtle"> · {user.activeSessions} active</small> : null}
+                </td>
+                <td>{formatWhen(user.createdAt)}</td>
+                <td>
+                  <button className="button secondary admin-open" onClick={() => openUser(user.id)} disabled={userLoading}>
+                    {userLoading ? "Loading…" : "Open"}
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {users.length === 0 ? (
+              <tr>
+                <td colSpan={7}>No accounts match.</td>
+              </tr>
+            ) : null}
+          </tbody>
+        </table>
+
+        <nav className="admin-pager">
+          <button className="button secondary" disabled={userPage === 0} onClick={() => setUserPage((p) => Math.max(p - 1, 0))}>
+            Previous
+          </button>
+          <span>Page {userPage + 1}</span>
+          <button className="button secondary" disabled={(userPage + 1) * limit >= userTotal} onClick={() => setUserPage((p) => p + 1)}>
+            Next
+          </button>
+        </nav>
+
+        {userDetail ? (
+          <section className="admin-detail" ref={userDetailRef}>
+            <h2>{userDetail.user.email}</h2>
+            <p className="admin-meta">
+              Joined {formatWhen(userDetail.user.createdAt)} · {userDetail.sessions.filter((session) => session.active).length} active
+              session(s) · {userDetail.user.linkedBrowsers} linked browser(s) · id {userDetail.user.id}
+            </p>
+
+            <h3>Their survey</h3>
+            {userDetail.survey ? (
+              <>
+                <p className="admin-meta">
+                  <span className="admin-code-inline">{userDetail.survey.code}</span> as <strong>{userDetail.survey.displayName}</strong> ·
+                  sees themselves as <strong>{userDetail.survey.selfType}</strong>
+                  {userDetail.survey.selfTestType && userDetail.survey.selfTestType !== userDetail.survey.selfType
+                    ? ` (their own answers score ${userDetail.survey.selfTestType})`
+                    : ""}{" "}
+                  · {userDetail.survey.status} · ranking {userDetail.survey.boardPublic ? "public" : "private"} · emails{" "}
+                  {userDetail.survey.notify
+                    ? userDetail.survey.notifiedLevel
+                      ? `on (last sent at ${userDetail.survey.notifiedLevel} answers)`
+                      : "on (none sent yet)"
+                    : "off"}{" "}
+                  ·{" "}
+                  {userDetail.survey.locale} · created {formatWhen(userDetail.survey.createdAt)}
+                </p>
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Answered as</th>
+                      <th>Relation</th>
+                      <th>Type given</th>
+                      <th>Signed in</th>
+                      <th>Submitted</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {userDetail.survey.responses.map((response, index) => (
+                      <tr key={`${response.name}-${index}`}>
+                        <td>{response.name}</td>
+                        <td>{RELATION_LABEL[response.relation] ?? response.relation}</td>
+                        <td>{response.type}</td>
+                        <td>{response.signedIn ? "Yes" : "No"}</td>
+                        <td>{formatWhen(response.submittedAt)}</td>
+                      </tr>
+                    ))}
+                    {userDetail.survey.responses.length === 0 ? (
+                      <tr>
+                        <td colSpan={5}>No answers yet.</td>
+                      </tr>
+                    ) : null}
+                  </tbody>
+                </table>
+              </>
+            ) : (
+              <p className="admin-meta">No survey.</p>
+            )}
+
+            <h3>Surveys they answered</h3>
+            {userDetail.answersGiven.length ? (
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Survey</th>
+                    <th>For</th>
+                    <th>Answered as</th>
+                    <th>Relation</th>
+                    <th>Type given</th>
+                    <th>Submitted</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {userDetail.answersGiven.map((answer, index) => (
+                    <tr key={`${answer.surveyCode}-${index}`}>
+                      <td className="admin-code">{answer.surveyCode}</td>
+                      <td>{answer.ownerName}</td>
+                      <td>{answer.answeredAs}</td>
+                      <td>{RELATION_LABEL[answer.relation] ?? answer.relation}</td>
+                      <td>{answer.type}</td>
+                      <td>{formatWhen(answer.submittedAt)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p className="admin-meta">None while signed in.</p>
+            )}
+
+            <h3>Sign-ins</h3>
+            <ul className="admin-list">
+              {userDetail.sessions.map((session, index) => (
+                <li key={index}>
+                  <strong>{formatWhen(session.createdAt)}</strong>
+                  <span>{session.active ? `active until ${formatWhen(session.expiresAt)}` : "expired"}</span>
+                </li>
+              ))}
+              {userDetail.sessions.length === 0 ? <li><span>No sessions.</span></li> : null}
+            </ul>
+
+            <div className="admin-export">
+              <button className="button secondary" onClick={() => setUserDetail(null)}>
+                Close
+              </button>
+            </div>
+          </section>
+        ) : null}
+      </section>
     </main>
   );
 }

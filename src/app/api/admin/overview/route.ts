@@ -16,6 +16,10 @@ interface OverviewRow {
   rooms_last_24h: number | string;
   rooms_last_7d: number | string;
   participants_last_24h: number | string;
+  accounts: number | string;
+  accounts_last_7d: number | string;
+  surveys: number | string;
+  survey_responses: number | string;
 }
 
 export async function GET(request: NextRequest) {
@@ -40,8 +44,12 @@ export async function GET(request: NextRequest) {
          (SELECT COUNT(*) FROM answers) AS answers,
          (SELECT COUNT(*) FROM rooms WHERE created_at > ?) AS rooms_last_24h,
          (SELECT COUNT(*) FROM rooms WHERE created_at > ?) AS rooms_last_7d,
-         (SELECT COUNT(*) FROM participants WHERE created_at > ?) AS participants_last_24h`,
-      [isoFor(day), isoFor(week), isoFor(day)],
+         (SELECT COUNT(*) FROM participants WHERE created_at > ?) AS participants_last_24h,
+         (SELECT COUNT(*) FROM users) AS accounts,
+         (SELECT COUNT(*) FROM users WHERE created_at > ?) AS accounts_last_7d,
+         (SELECT COUNT(*) FROM surveys) AS surveys,
+         (SELECT COUNT(*) FROM survey_responses WHERE is_owner = 0) AS survey_responses`,
+      [isoFor(day), isoFor(week), isoFor(day), isoFor(week)],
     );
   });
 
@@ -58,5 +66,9 @@ export async function GET(request: NextRequest) {
     roomsLast24h: number(stats?.rooms_last_24h),
     roomsLast7d: number(stats?.rooms_last_7d),
     participantsLast24h: number(stats?.participants_last_24h),
+    accounts: number(stats?.accounts),
+    accountsLast7d: number(stats?.accounts_last_7d),
+    surveys: number(stats?.surveys),
+    surveyResponses: number(stats?.survey_responses),
   });
 }

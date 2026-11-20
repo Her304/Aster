@@ -694,6 +694,10 @@ a { color: inherit; }
 .admin-detail h3 { margin: 10px 0 0; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fern); }
 .admin-code-inline { letter-spacing: 0.12em; }
 .admin-meta { margin: 0; color: #5c6d5f; font-size: 13px; }
+.admin-accounts { margin-top: 56px; padding-top: 30px; border-top: 2px dashed rgba(21,61,47,0.26); }
+.admin-section-title { margin: 0 0 18px; font-family: var(--display); font-size: clamp(26px, 3vw, 34px); font-weight: 500; letter-spacing: -0.02em; }
+.admin-subtle { color: #5c6d5f; font-size: 12px; }
+.admin-accounts .admin-search input { min-width: min(320px, 70vw); text-transform: none; letter-spacing: normal; }
 .admin-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .admin-list li { display: flex; align-items: baseline; gap: 12px; border-bottom: 1px dashed var(--line); padding-bottom: 6px; }
 .admin-list li span { color: #758177; font-size: 12px; }
