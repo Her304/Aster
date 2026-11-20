@@ -31,8 +31,8 @@ const koreanHand = localFont({
 // Traditional Chinese handwriting: a subset of ChenYuluoyan 2.0 Thin, renamed
 // "Aster Hand TC" as its OFL Reserved Font Names require. The full face is
 // 9.5 MB; handwriting only appears on static home-page copy, so the file holds
-// exactly those glyphs plus ASCII (see src/fonts/README.md). Only Chinese
-// readers fetch it.
+// exactly those Chinese glyphs; Latin stays in Caveat (see src/fonts/README.md).
+// Only Chinese readers fetch it.
 const chineseHand = localFont({
   src: "../fonts/aster-hand-tc-subset.woff2",
   variable: "--font-hand-zh",

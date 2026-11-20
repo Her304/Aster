@@ -19,27 +19,30 @@ const color = {
 
 type Fonts = { display: string; sans: string; hand: string };
 
-/** The site's three faces per language (DESIGN.md), as stacks mail clients can find on the reader's device. */
+const LATIN_SERIF = `'Iowan Old Style','Palatino Linotype','Book Antiqua',Palatino`;
+const LATIN_SANS = `'Avenir Next',Avenir,'Gill Sans','Trebuchet MS'`;
+
+/** Latin always in the English faces, then each script's own (DESIGN.md). */
 const FONTS: Record<string, Fonts> = {
   en: {
-    display: `'Iowan Old Style','Palatino Linotype','Book Antiqua',Palatino,Georgia,serif`,
-    sans: `'Avenir Next',Avenir,'Gill Sans','Trebuchet MS',Arial,sans-serif`,
+    display: `${LATIN_SERIF},Georgia,serif`,
+    sans: `${LATIN_SANS},Arial,sans-serif`,
     hand: `Caveat,cursive`,
   },
   "zh-Hant": {
-    display: `'Noto Serif TC','Songti TC',PMingLiU,serif`,
-    sans: `'Noto Sans HK','PingFang TC','Microsoft JhengHei',sans-serif`,
+    display: `${LATIN_SERIF},'Noto Serif TC','Songti TC',PMingLiU,serif`,
+    sans: `${LATIN_SANS},'Noto Sans HK','PingFang TC','Microsoft JhengHei',sans-serif`,
     hand: `Caveat,'Noto Sans HK','PingFang TC','Microsoft JhengHei',sans-serif`,
   },
   ja: {
-    display: `'Hiragino Mincho ProN','Yu Mincho',YuMincho,serif`,
-    sans: `'Hiragino Sans','Hiragino Kaku Gothic ProN','Yu Gothic',YuGothic,sans-serif`,
+    display: `${LATIN_SERIF},'Hiragino Mincho ProN','Yu Mincho',YuMincho,serif`,
+    sans: `${LATIN_SANS},'Hiragino Sans','Hiragino Kaku Gothic ProN','Yu Gothic',YuGothic,sans-serif`,
     hand: `Caveat,'Hiragino Sans','Yu Gothic',sans-serif`,
   },
   ko: {
-    display: `AppleMyungjo,Batang,serif`,
-    sans: `'Apple SD Gothic Neo','Malgun Gothic',sans-serif`,
-    hand: `'Apple SD Gothic Neo','Malgun Gothic',sans-serif`,
+    display: `${LATIN_SERIF},AppleMyungjo,Batang,serif`,
+    sans: `${LATIN_SANS},'Apple SD Gothic Neo','Malgun Gothic',sans-serif`,
+    hand: `Caveat,'Apple SD Gothic Neo','Malgun Gothic',sans-serif`,
   },
 };
 

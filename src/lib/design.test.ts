@@ -28,17 +28,19 @@ describe("design rules", () => {
     expect(new Set(families)).toEqual(new Set(["var(--display)", "var(--sans)", "var(--hand)", "var(--heading)"]));
   });
 
-  it("keeps the English faces out of Chinese, Japanese and Korean pages", () => {
+  it("draws Latin in the same English faces on every page", () => {
+    const english = { "--display": "\"Iowan Old Style\"", "--sans": "\"Avenir Next\"", "--hand": "var(--font-hand)" };
     for (const lang of ["zh-Hant", "ja", "ko"]) {
       const block = languageBlock(lang);
-      for (const role of ["--display", "--sans", "--hand"]) expect(block, `${lang} ${role}`).toContain(`${role}:`);
-      expect(block, lang).not.toMatch(/Iowan|Palatino|Avenir|Gill Sans|Trebuchet/);
+      for (const [role, first] of Object.entries(english)) {
+        const stack = block.match(new RegExp(`${role}:([^;]*)`))?.[1]?.trim() ?? "";
+        expect(stack.startsWith(first), `${lang} ${role}: ${stack}`).toBe(true);
+      }
     }
   });
 
-  it("gives Chinese its own handwriting face instead of Caveat", () => {
+  it("gives Chinese its own handwriting face after Caveat", () => {
     const hand = languageBlock("zh-Hant").match(/--hand:([^;]*)/)?.[1] ?? "";
-    expect(hand.trim().startsWith("var(--font-hand-zh)")).toBe(true);
-    expect(hand).not.toContain("var(--font-hand)");
+    expect(hand.trim()).toMatch(/^var\(--font-hand\), var\(--font-hand-zh\)/);
   });
 });

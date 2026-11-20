@@ -8,9 +8,10 @@ reader's device.
 The full Nanum Pen Script face is roughly 1.2 MB, too heavy to ship whole.
 
 Traditional Chinese handwriting uses **Aster Hand TC**, a subset of
-ChenYuluoyan 2.0 Thin (辰宇落雁體). It includes its own Latin letters and
-digits, so Chinese pages need no Caveat. Headings use Noto Serif TC and other
-text Noto Sans HK, both from `next/font/google` in `src/app/layout.tsx`.
+ChenYuluoyan 2.0 Thin (辰宇落雁體). Latin in handwritten copy stays in Caveat,
+like on every other page, so the subset holds only Chinese characters and
+punctuation. Headings use Noto Serif TC and other text Noto Sans HK, both from
+`next/font/google` in `src/app/layout.tsx`.
 
 ChenYuluoyan has no kana and no Hangul, so it is not used for Japanese or
 Korean.
@@ -24,7 +25,7 @@ actually reading.
 | File | Family | Glyphs | Size |
 | --- | --- | --- | --- |
 | `nanum-pen-ko-subset.woff2` | Nanum Pen Script | 293 | 61 KB |
-| `aster-hand-tc-subset.woff2` | Aster Hand TC (from ChenYuluoyan 2.0 Thin) | 195 | 67 KB |
+| `aster-hand-tc-subset.woff2` | Aster Hand TC (from ChenYuluoyan 2.0 Thin) | 100 | 45 KB |
 
 ## Licences
 
@@ -60,7 +61,7 @@ the file the CSS points at over the one here.
 
 Handwriting on Chinese pages appears only in the home page's handwritten
 elements (the `--hand` selectors in `globals.css`). The subset holds the
-characters of these Traditional Chinese strings plus printable ASCII and
+non-ASCII characters of these Traditional Chinese strings plus
 ，。、！？：；「」（）—…·
 
 - `src/lib/i18n.tsx` (`zhHant`): `home.circleCaption`, `home.snapCaption`,

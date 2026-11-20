@@ -15,11 +15,12 @@ The source of truth for values is `src/app/globals.css` (`:root` tokens).
    Separate things with a 1px border, a dashed rule, a change of paper tone or
    space. Selected and focused states use borders, outlines or fills, never a
    shadow or an offset block behind the element.
-2. **At most three faces per language.** Every page uses exactly three type
-   roles, display, text and accent, and each role is one face in each
-   language. Chinese, Japanese and Korean pages put their own faces first, so
-   Latin letters on those pages (names, "MBTI", "ENFP") use them too instead
-   of pulling in the English faces. Names later in a stack are the same role
+2. **One set of English faces, and at most three faces per script.** Every
+   page uses three type roles: display, text and accent. Latin letters
+   (names, "MBTI", "ENFP", digits, the wordmark) are always drawn in the same
+   three English faces, whatever the page language. Each stack starts with
+   them; Chinese, Japanese and Korean faces follow and draw only their own
+   script, at most three per script. Names later in a stack are the same role
    on another platform (Mac and Windows), never an extra face.
 3. **Colours come from the tokens.** Add a token before adding a new colour.
 4. **Handwriting is for static copy only**, never for anything a person types
@@ -53,7 +54,8 @@ In email, where transparency is unreliable, the pre-mixed hexes are `#dadfd8`
 ## Type
 
 Three roles, set as custom properties and switched per language on
-`html[lang]`:
+`html[lang]`. Latin always uses the English column; the other columns are what
+each script's own characters use:
 
 | Role | Variable | Use |
 | --- | --- | --- |
@@ -64,8 +66,8 @@ Three roles, set as custom properties and switched per language on
 | Language | Display | Text | Accent |
 | --- | --- | --- | --- |
 | English | Iowan Old Style (Palatino Linotype on Windows) | Avenir Next (Trebuchet MS / Gill Sans) | Caveat |
-| Traditional Chinese | Noto Serif TC for h1/h2, Noto Sans HK for other display text | Noto Sans HK | Aster Hand TC (subset of 辰宇落雁體 ChenYuluoyan 2.0 Thin, with its own Latin) |
-| Japanese | Hiragino Mincho ProN (Yu Mincho) | Hiragino Sans (Yu Gothic) | Caveat for Latin; Japanese falls to Hiragino Sans |
+| Traditional Chinese | Noto Serif TC for h1/h2, Noto Sans HK for other display text | Noto Sans HK | Aster Hand TC (subset of 辰宇落雁體 ChenYuluoyan 2.0 Thin) |
+| Japanese | Hiragino Mincho ProN (Yu Mincho) | Hiragino Sans (Yu Gothic) | Hiragino Sans (no Japanese handwriting face yet) |
 | Korean | AppleMyungjo (Batang) | Apple SD Gothic Neo (Malgun Gothic) | Nanum Pen Script (self-hosted subset) |
 
 Caveat, Noto Serif TC and Noto Sans HK are self-hosted through `next/font`
@@ -174,7 +176,9 @@ preview.
 - Same palette (mirrored in `palette`).
 - One serif and one sans per image, chosen by the language on it: Noto Serif
   and Sans TC/HK, JP or KR, fetched from Google Fonts and subset to exactly
-  the characters drawn. Japanese text gets Japanese kanji forms, Korean
+  the characters drawn. The English faces are system fonts that can't be
+  embedded, so Latin on images uses the Noto pair: the one place Latin
+  differs from the site. Japanese text gets Japanese kanji forms, Korean
   Korean ones. A second pair loads only if the text contains a script the
   first cannot draw.
 - No names of respondents on the story card.
