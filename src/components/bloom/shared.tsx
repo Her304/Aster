@@ -12,6 +12,8 @@ import {
   type Badge,
   type Board,
   type BloomAnswers,
+  FLOWERS,
+  FLOWER_BANDS,
   type Flower,
   type Tiebreaks,
 } from "@/lib/bloom";
@@ -293,6 +295,33 @@ export function FlowerAchievement({ flower, similarity, ownerName }: { flower: F
         <p>{b(`flower.body.${flower}`, { name: ownerName })}</p>
         <small className="flower-score">{b("flower.score", { score: similarity, name: ownerName })}</small>
       </div>
+    </section>
+  );
+}
+
+/**
+ * The four flowers, each with its painting, name, meaning in the language of
+ * flowers, the similarity range that earns it and, once open, how many earned it.
+ */
+export function FlowerGuide({ counts }: { counts: Record<Flower, number> }) {
+  const b = useBloomCopy();
+  return (
+    <section className="bloom-card flower-guide">
+      <h2 className="card-title">{b("flowers.title")}</h2>
+      <p>{b("flowers.body")}</p>
+      <ul>
+        {FLOWERS.map((flower) => (
+          <li key={flower}>
+            <Image className="flower-guide-painting" src={flowerPaintings[flower]} alt={b("flower.alt", { name: b(`flower.name.${flower}`) })} sizes="96px" />
+            <div>
+              <h3>{b(`flower.name.${flower}`)} <span className="flower-guide-count">{b("flowers.count", { count: counts[flower] })}</span></h3>
+              <em className="flower-meaning">{b(`flower.meaning.${flower}`)}</em>
+              <small className="flower-score">{b("flowers.band", { min: FLOWER_BANDS[flower][0], max: FLOWER_BANDS[flower][1] })}</small>
+              <p>{b(`flowerGuide.${flower}`)}</p>
+            </div>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }

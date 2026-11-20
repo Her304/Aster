@@ -187,7 +187,7 @@ export async function notifyMilestone(surveyId: string, origin: string) {
   );
   if (!row || !Number(row.notify)) return;
   const total = Number(row.total);
-  const level = [THRESHOLDS.audiences, THRESHOLDS.behaviours, THRESHOLDS.board].find((threshold) => total >= threshold);
+  const level = [THRESHOLDS.flowers, THRESHOLDS.audiences, THRESHOLDS.behaviours, THRESHOLDS.board].find((threshold) => total >= threshold);
   if (!level || level <= Number(row.notified_level)) return;
   const { changes } = await execute("UPDATE surveys SET notified_level = ? WHERE id = ? AND notified_level < ?", [level, surveyId, level]);
   if (!changes) return;

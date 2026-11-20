@@ -32,11 +32,13 @@ one link (`/s/<code>`):
 - Gap badges (such as "Undercover introvert" or "Chameleon") name the shape of
   the difference, and the initiator can share a story-sized result card.
 - Each survey link has its own preview image when pasted into a chat.
-- Every respondent earns a watercolour flower, with its language of flowers, by
-  how closely their answers match the initiator's own type: globe amaranth
-  (84–100%), blue iris (50–83%), iris (25–49%) or hydrangea (0–24%). The
-  initiator sees each respondent's flower beside their name, and the flowers
-  people earned are painted behind the result card.
+- Once ten people have answered, every respondent earns a watercolour flower
+  by how closely their answers match the initiator's own type: globe amaranth
+  (84–100%), blue iris (50–83%), iris (25–49%) or hydrangea (0–24%).
+  Respondents see their flower and its meaning in the language of flowers;
+  the initiator sees each respondent's flower beside their name, a guide to
+  all four with how many earned each, and the flowers painted behind the
+  result card. Initiators who opted in get an email when the flowers open.
 - From five answers, the AI prompt lists the three questions respondents
   disagreed on most, with their combined counts.
 - The initiator's page has a garden: every answer plants one of twelve painted

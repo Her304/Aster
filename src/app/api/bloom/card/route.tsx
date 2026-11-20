@@ -48,8 +48,10 @@ export async function GET(request: Request) {
   const ask = text("card.ask");
   const link = `${url.host}/s/${survey.code}`;
   const letters = report.board.letters;
-  const earned = FLOWERS.filter((flower) => report.flowers[flower] > 0)
-    .sort((a, b) => report.flowers[b] - report.flowers[a] || FLOWERS.indexOf(a) - FLOWERS.indexOf(b));
+  const counts = report.flowers;
+  const earned = counts
+    ? FLOWERS.filter((flower) => counts[flower] > 0).sort((a, b) => counts[b] - counts[a] || FLOWERS.indexOf(a) - FLOWERS.indexOf(b))
+    : [];
 
   const { serifStack, sansStack } = fontStacks(`${report.selfType}${topTypes.join("")}${ask}` + `Aster${said}${friendsSaid}${badges.join("")}${link}EISNTFJP0123456789·`);
   const [mark, fonts] = await Promise.all([

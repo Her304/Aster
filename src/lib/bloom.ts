@@ -24,7 +24,7 @@ export const RELATIONS = ["family", "close_friend", "classmate", "colleague", "o
 export type Relation = (typeof RELATIONS)[number];
 
 /** Answers needed before each part opens. */
-export const THRESHOLDS = { board: 3, behaviours: 5, audiences: 8 } as const;
+export const THRESHOLDS = { board: 3, behaviours: 5, audiences: 8, flowers: 10 } as const;
 
 /** An outside view counts as shared when at least this share of respondents agree on a letter. */
 export const CONSENSUS_SHARE = 0.7;
@@ -292,14 +292,19 @@ export function responseSimilarity(selfType: string, answers: BloomAnswers): num
  * 25–49%: iris, the rainbow's messenger.
  * 0–24%: hydrangea, whose colour changes with its soil.
  */
+/** The similarity range, in whole percentages, that earns each flower. */
+export const FLOWER_BANDS: Readonly<Record<Flower, readonly [number, number]>> = {
+  "globe-amaranth": [84, 100],
+  "blue-iris": [50, 83],
+  iris: [25, 49],
+  hydrangea: [0, 24],
+};
+
 export function flowerFor(score: number): Flower;
 export function flowerFor(score: number | null): Flower | null;
 export function flowerFor(score: number | null): Flower | null {
   if (score === null) return null;
-  if (score >= 84) return "globe-amaranth";
-  if (score >= 50) return "blue-iris";
-  if (score >= 25) return "iris";
-  return "hydrangea";
+  return FLOWERS.find((flower) => score >= FLOWER_BANDS[flower][0]) ?? "hydrangea";
 }
 
 export interface BloomReport {
@@ -308,8 +313,8 @@ export interface BloomReport {
   board: Board;
   axes: AxisReading[];
   badges: Badge[];
-  /** How many respondents earned each flower. */
-  flowers: Record<Flower, number>;
+  /** How many respondents earned each flower; null until the flowers open. */
+  flowers: Record<Flower, number> | null;
   /** The three questions respondents disagreed on most, once individual answers may be combined. */
   controversies: { status: "locked"; needed: number } | { status: "ready"; items: ControversyItem[] };
   behaviours:
@@ -336,6 +341,13 @@ export function readAxes(selfType: string, board: Board): AxisReading[] {
       pattern: consensus ? (split.majority === selfLetter ? "agree" : "outside") : "split",
     };
   });
+}
+
+/** How many respondents earned each flower. */
+export function countFlowers(selfType: string, answers: readonly BloomAnswers[]): Record<Flower, number> {
+  const counts = Object.fromEntries(FLOWERS.map((flower) => [flower, 0])) as Record<Flower, number>;
+  for (const one of answers) counts[flowerFor(responseSimilarity(selfType, one))] += 1;
+  return counts;
 }
 
 /**
@@ -419,8 +431,7 @@ export function buildReport(
     audiences = { status: "ready", groups };
   }
 
-  const flowers = Object.fromEntries(FLOWERS.map((flower) => [flower, 0])) as Record<Flower, number>;
-  for (const response of responses) flowers[flowerFor(responseSimilarity(selfType, response.answers))] += 1;
+  const flowers = total < THRESHOLDS.flowers ? null : countFlowers(selfType, responses.map((response) => response.answers));
 
   const controversies: BloomReport["controversies"] = total < THRESHOLDS.behaviours
     ? { status: "locked", needed: THRESHOLDS.behaviours - total }

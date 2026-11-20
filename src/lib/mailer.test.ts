@@ -25,9 +25,10 @@ describe("Aster emails", () => {
 
   it("links each milestone email to the report", () => {
     for (const locale of locales) {
-      for (const level of [3, 5, 8]) {
+      for (const level of [3, 5, 8, 10]) {
         const message = milestoneMessage(level, level, `${origin}/bloom/report`, locale, origin);
         expect(message.subject).toBeTruthy();
+        expect(message.text).not.toContain("undefined");
         expect(message.html).toContain(`href="${origin}/bloom/report"`);
         expect(message.text).toContain(`${origin}/bloom/report`);
         expect(stylesAreWellFormed(message.html), `${locale} ${level}`).toBe(true);

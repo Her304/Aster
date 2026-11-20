@@ -23,13 +23,15 @@ export async function GET(_request: Request, { params }: Params) {
   const own = isOwner ? undefined : await findOwnResponse(survey.id, visitor?.id, user?.id);
   const board = await surveyBoard(survey.id);
   const canSeeBoard = isOwner || (own !== undefined && Boolean(survey.board_public));
-  const similarity = own ? responseSimilarity(survey.self_type, await responseAnswers(own.id)) : null;
+  const flowersOpen = board.total >= THRESHOLDS.flowers;
+  const similarity = own && flowersOpen ? responseSimilarity(survey.self_type, await responseAnswers(own.id)) : null;
 
   return NextResponse.json({
     survey: { code: survey.code, displayName: survey.display_name, status: survey.status },
     viewer: { isOwner, signedIn: Boolean(user) },
     total: board.total,
     boardThreshold: THRESHOLDS.board,
+    flowerThreshold: THRESHOLDS.flowers,
     boardPublic: Boolean(survey.board_public),
     response: own
       ? {

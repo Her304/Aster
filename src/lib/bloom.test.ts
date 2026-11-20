@@ -5,6 +5,7 @@ import {
   THRESHOLDS,
   buildBoard,
   buildReport,
+  FLOWER_BANDS,
   flowerFor,
   gapBadges,
   matchingLetters,
@@ -163,20 +164,30 @@ describe("flower achievements", () => {
     expect(flowerFor(0)).toBe("hydrangea");
   });
 
-  it("counts the flowers respondents earned on the report", () => {
-    const report = buildReport("ENFP", null, [
-      { relation: "family", type: "ENFP", answers: answersFor("ENFP") },
-      { relation: "family", type: "ENFP", answers: answersFor("ENFP") },
-      { relation: "colleague", type: "ENTJ", answers: answersFor("ENTJ") },
-      { relation: "colleague", type: "ISTJ", answers: answersFor("ISTJ") },
-    ]);
-    expect(report.flowers).toEqual({ "globe-amaranth": 2, "blue-iris": 1, iris: 0, hydrangea: 1 });
+  it("counts the flowers respondents earned once ten have answered", () => {
+    const responses = [
+      ...Array.from({ length: 5 }, () => ({ relation: "family" as const, type: "ENFP", answers: answersFor("ENFP") })),
+      ...Array.from({ length: 3 }, () => ({ relation: "colleague" as const, type: "ENTJ", answers: answersFor("ENTJ") })),
+      ...Array.from({ length: 2 }, () => ({ relation: "colleague" as const, type: "ISTJ", answers: answersFor("ISTJ") })),
+    ];
+    expect(THRESHOLDS.flowers).toBe(10);
+    expect(buildReport("ENFP", null, responses.slice(0, 9)).flowers).toBeNull();
+    expect(buildReport("ENFP", null, responses).flowers).toEqual({ "globe-amaranth": 5, "blue-iris": 3, iris: 0, hydrangea: 2 });
+  });
+
+  it("covers every percentage with exactly one band", () => {
+    for (let score = 0; score <= 100; score += 1) {
+      const flower = flowerFor(score);
+      const [min, max] = FLOWER_BANDS[flower];
+      expect(score >= min && score <= max, `${score} → ${flower}`).toBe(true);
+    }
   });
 
   it("names and explains every flower in every language", () => {
     for (const table of Object.values(bloomTranslations)) {
       for (const flower of ["globe-amaranth", "blue-iris", "iris", "hydrangea"]) {
         for (const part of ["name", "meaning", "body"]) expect(table[`flower.${part}.${flower}` as keyof typeof table]).toBeTruthy();
+        expect(table[`flowerGuide.${flower}` as keyof typeof table]).toBeTruthy();
       }
     }
   });

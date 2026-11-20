@@ -7,7 +7,7 @@ import { BLOOM_QUESTIONS, THRESHOLDS, type BloomReport } from "@/lib/bloom";
 import { useBloomCopy } from "@/lib/bloom-i18n";
 import { answerLabel, buildAiPrompt, notableGaps } from "@/lib/bloom-prompt";
 import { I18nProvider, translateQuestion, useI18n, type TranslationKey } from "@/lib/i18n";
-import { ApiError, BadgeList, BloomHeader, BoardView, api, useErrorText } from "./shared";
+import { ApiError, BadgeList, BloomHeader, FlowerGuide, BoardView, api, useErrorText } from "./shared";
 
 const axisTitles: Record<string, TranslationKey> = {
   EI: "results.social",
@@ -128,6 +128,15 @@ function ReportContent() {
                 </ul>
               )}
             </section>
+
+            {report.flowers ? (
+              <FlowerGuide counts={report.flowers} />
+            ) : (
+              <section className="bloom-card">
+                <h2 className="card-title">{b("flowers.title")}</h2>
+                <p className="muted">{b("flowers.locked", { threshold: THRESHOLDS.flowers, needed: THRESHOLDS.flowers - report.total })}</p>
+              </section>
+            )}
 
             <section className="bloom-card">
               <h2 className="card-title">{b("r.audiencesTitle")}</h2>

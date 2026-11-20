@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { currentUser } from "@/lib/accounts";
-import { flowerFor, gapBadges, isPersonalityType, parseAnswers, parseTiebreaks, readAxes, responseSimilarity, scoreBloom } from "@/lib/bloom";
+import { THRESHOLDS, countFlowers, flowerFor, gapBadges, isPersonalityType, parseAnswers, parseTiebreaks, readAxes, responseSimilarity, scoreBloom } from "@/lib/bloom";
 import {
   getSurveyByOwner,
   insertResponse,
@@ -43,12 +43,13 @@ export async function GET() {
     },
     board,
     badges: gapBadges(readAxes(survey.self_type, board), board.total),
+    flowers: board.total >= THRESHOLDS.flowers ? countFlowers(survey.self_type, [...answers.values()]) : null,
     responses: responses.map((response) => ({
       id: response.id,
       name: response.respondent_name,
       relation: response.relation,
       type: response.result_type,
-      flower: flowerFor(responseSimilarity(survey.self_type, answers.get(response.id) ?? {})),
+      flower: board.total >= THRESHOLDS.flowers ? flowerFor(responseSimilarity(survey.self_type, answers.get(response.id) ?? {})) : null,
       signedIn: Boolean(response.user_id),
       submittedAt: isoTime(response.submitted_at),
     })),

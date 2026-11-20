@@ -16,7 +16,7 @@ import {
 import { useBloomCopy, type BloomKey } from "@/lib/bloom-i18n";
 import { I18nProvider, useI18n } from "@/lib/i18n";
 import { bloomSelfAnswers, clearSelfView, loadSelfView } from "@/lib/self-test";
-import { BadgeList, BloomHeader, BoardView, Questionnaire, TypePicker, api, useErrorText } from "./shared";
+import { BadgeList, BloomHeader, BoardView, FlowerGuide, Questionnaire, TypePicker, api, useErrorText } from "./shared";
 import { Garden } from "./garden";
 
 interface Me {
@@ -38,6 +38,7 @@ interface Dashboard {
   } | null;
   board?: Board;
   badges?: Badge[];
+  flowers?: Record<Flower, number> | null;
   responses?: Array<{ id: string; name: string; relation: string; type: string; flower: Flower | null; signedIn: boolean; submittedAt: string }>;
 }
 
@@ -377,6 +378,7 @@ function DashboardView({ data, reload }: { data: Dashboard; reload: () => Promis
     { key: "dash.mBoard", at: THRESHOLDS.board },
     { key: "dash.mBehaviours", at: THRESHOLDS.behaviours },
     { key: "dash.mAudiences", at: THRESHOLDS.audiences },
+    { key: "dash.mFlowers", at: THRESHOLDS.flowers },
   ];
 
   return (
@@ -397,6 +399,8 @@ function DashboardView({ data, reload }: { data: Dashboard; reload: () => Promis
       </section>
 
       <Garden plants={[...responses].reverse()} />
+
+      {data.flowers && <FlowerGuide counts={data.flowers} />}
 
       <section className="bloom-card">
         <span className="card-kicker">{b("dash.milestones")}</span>
