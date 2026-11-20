@@ -12,18 +12,38 @@ const color = {
   ink: "#153d2f",
   inkSoft: "#315546",
   fern: "#537760",
-  moss: "#c7d3b7",
-  lilac: "#cbc1db",
   marker: "#e9b93a",
   line: "#dadfd8", // rgba(21,61,47,0.16) on white
   dash: "#bcc2b7", // rgba(21,61,47,0.26) on paper
 } as const;
 
-const font = {
-  display: `'Iowan Old Style','Palatino Linotype','Book Antiqua',Palatino,'Noto Serif TC','Songti TC','Hiragino Mincho ProN','Yu Mincho','AppleMyungjo','Nanum Myeongjo',Georgia,serif`,
-  sans: `'Avenir Next',Avenir,'Gill Sans','Trebuchet MS','PingFang TC','Hiragino Sans','Apple SD Gothic Neo','Malgun Gothic',Arial,sans-serif`,
-  hand: `Caveat,'Bradley Hand','Segoe Print','Marker Felt',cursive`,
-} as const;
+type Fonts = { display: string; sans: string; hand: string };
+
+/** The site's three faces per language (DESIGN.md), as stacks mail clients can find on the reader's device. */
+const FONTS: Record<string, Fonts> = {
+  en: {
+    display: `'Iowan Old Style','Palatino Linotype','Book Antiqua',Palatino,Georgia,serif`,
+    sans: `'Avenir Next',Avenir,'Gill Sans','Trebuchet MS',Arial,sans-serif`,
+    hand: `Caveat,cursive`,
+  },
+  "zh-Hant": {
+    display: `'Noto Serif TC','Songti TC',PMingLiU,serif`,
+    sans: `'Noto Sans HK','PingFang TC','Microsoft JhengHei',sans-serif`,
+    hand: `Caveat,'Noto Sans HK','PingFang TC','Microsoft JhengHei',sans-serif`,
+  },
+  ja: {
+    display: `'Hiragino Mincho ProN','Yu Mincho',YuMincho,serif`,
+    sans: `'Hiragino Sans','Hiragino Kaku Gothic ProN','Yu Gothic',YuGothic,sans-serif`,
+    hand: `Caveat,'Hiragino Sans','Yu Gothic',sans-serif`,
+  },
+  ko: {
+    display: `AppleMyungjo,Batang,serif`,
+    sans: `'Apple SD Gothic Neo','Malgun Gothic',sans-serif`,
+    hand: `'Apple SD Gothic Neo','Malgun Gothic',sans-serif`,
+  },
+};
+
+const fontsFor = (lang: string) => FONTS[lang] ?? FONTS.en;
 
 export function escapeHtml(value: string) {
   return value.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]!);
@@ -44,11 +64,12 @@ interface Shell {
   origin: string;
 }
 
-function paragraph(text: string, style = "") {
+function paragraph(font: Fonts, text: string, style = "") {
   return `<p style="margin:0 0 14px;font-family:${font.sans};font-size:15px;line-height:1.6;color:${color.inkSoft};${style}">${escapeHtml(text)}</p>`;
 }
 
 function shell({ lang, title, preheader, eyebrow, heading, body, note, tagline, origin }: Shell) {
+  const font = fontsFor(lang);
   const logo = `${origin}/email/aster-mark.png`;
   return `<!doctype html>
 <html lang="${escapeHtml(lang)}">
@@ -84,7 +105,7 @@ function shell({ lang, title, preheader, eyebrow, heading, body, note, tagline, 
           </td>
         </tr>
         <tr>
-          <td class="aster-card" style="background-color:${color.white};border:1px solid ${color.line};border-radius:6px;padding:36px 36px 28px;box-shadow:8px 8px 0 ${color.moss};">
+          <td class="aster-card" style="background-color:${color.white};border:1px solid ${color.line};border-radius:6px;padding:36px 36px 28px;">
             <p style="margin:0 0 4px;font-family:${font.hand};font-size:24px;font-weight:600;line-height:1.2;color:${color.fern};">${escapeHtml(eyebrow)}</p>
             <h1 class="aster-heading" style="margin:0 0 16px;font-family:${font.display};font-size:30px;font-weight:500;line-height:1.2;letter-spacing:-0.02em;color:${color.ink};">${escapeHtml(heading)}</h1>
             ${body}
@@ -120,6 +141,7 @@ export interface SignInEmailCopy {
 }
 
 export function signInEmailHtml(copy: SignInEmailCopy, code: string, origin: string) {
+  const font = fontsFor(copy.lang);
   const codeBlock = `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 18px;">
               <tr>
                 <td style="background-color:${color.paper};border:1px dashed ${color.dash};border-radius:4px;padding:16px 22px 12px;">
@@ -134,7 +156,7 @@ export function signInEmailHtml(copy: SignInEmailCopy, code: string, origin: str
     preheader: copy.preheader,
     eyebrow: copy.eyebrow,
     heading: copy.heading,
-    body: paragraph(copy.intro) + codeBlock + paragraph(copy.expiry, "margin:0;font-size:14px;"),
+    body: paragraph(font, copy.intro) + codeBlock + paragraph(font, copy.expiry, "margin:0;font-size:14px;"),
     note: copy.ignore,
     tagline: copy.tagline,
     origin,
@@ -153,9 +175,10 @@ export interface MilestoneEmailCopy {
 }
 
 export function milestoneEmailHtml(copy: MilestoneEmailCopy, link: string, origin: string) {
+  const font = fontsFor(copy.lang);
   const button = `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 4px;">
               <tr>
-                <td style="background-color:${color.ink};border-radius:3px;border-bottom:4px solid ${color.lilac};">
+                <td style="background-color:${color.ink};border-radius:4px;">
                   <a href="${escapeHtml(link)}" style="display:inline-block;padding:14px 22px;font-family:${font.sans};font-size:14px;font-weight:700;color:${color.white};text-decoration:none;">${escapeHtml(copy.cta)} &rarr;</a>
                 </td>
               </tr>
@@ -166,7 +189,7 @@ export function milestoneEmailHtml(copy: MilestoneEmailCopy, link: string, origi
     preheader: copy.preheader,
     eyebrow: copy.eyebrow,
     heading: copy.subject,
-    body: paragraph(copy.lede) + button,
+    body: paragraph(font, copy.lede) + button,
     note: copy.turnOff,
     tagline: copy.tagline,
     origin,

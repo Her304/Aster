@@ -4,7 +4,7 @@ import { THRESHOLDS } from "@/lib/bloom";
 import { getSurveyByOwner, surveyReport } from "@/lib/bloom-data";
 import { bloomText } from "@/lib/bloom-i18n";
 import { error } from "@/lib/http";
-import { asterMark, palette, sansStack, serifStack, shareFonts } from "@/lib/share-image";
+import { asterMark, fontStacks, palette, shareFonts } from "@/lib/share-image";
 import type { Locale } from "@/lib/i18n";
 
 export const runtime = "nodejs";
@@ -39,6 +39,7 @@ export async function GET(request: Request) {
   const link = `${url.host}/s/${survey.code}`;
   const letters = report.board.letters;
 
+  const { serifStack, sansStack } = fontStacks(`${report.selfType}${topTypes.join("")}${ask}` + `Aster${said}${friendsSaid}${badges.join("")}${link}EISNTFJP0123456789·`);
   const [mark, fonts] = await Promise.all([
     asterMark(),
     shareFonts(`${report.selfType}${topTypes.join("")}${ask}`, `Aster${said}${friendsSaid}${badges.join("")}${link}EISNTFJP0123456789·`),
