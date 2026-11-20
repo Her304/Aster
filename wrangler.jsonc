@@ -23,6 +23,9 @@
 	},
 	// Lets non-production branches deploy as Worker Previews.
 	"previews": {},
+	// Plain-text variables. Keep empty: RESEND_API_KEY, EMAIL_FROM,
+	// DATABASE_URL and ADMIN_TOKEN are dashboard secrets, which deploys keep.
+	"vars": {},
 	"observability": {
 		"logs": {
 			"enabled": true,
