@@ -35,4 +35,10 @@ describe("design rules", () => {
       expect(block, lang).not.toMatch(/Iowan|Palatino|Avenir|Gill Sans|Trebuchet/);
     }
   });
+
+  it("gives Chinese its own handwriting face instead of Caveat", () => {
+    const hand = languageBlock("zh-Hant").match(/--hand:([^;]*)/)?.[1] ?? "";
+    expect(hand.trim().startsWith("var(--font-hand-zh)")).toBe(true);
+    expect(hand).not.toContain("var(--font-hand)");
+  });
 });

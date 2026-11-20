@@ -29,8 +29,8 @@ html { scroll-behavior: smooth; }
 body { margin: 0; min-width: 320px; background-color: var(--paper); background-image: radial-gradient(circle at 16% 9%, rgba(214,184,120,0.20), transparent 38%), radial-gradient(circle at 86% 74%, rgba(172,192,156,0.18), transparent 40%), radial-gradient(rgba(32,53,39,0.05) 0.55px, transparent 0.7px); background-size: auto, auto, 5px 5px; color: var(--ink); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
 /* Chinese, Japanese and Korean put their own faces first, so Latin letters on
    those pages use them too instead of pulling in the English faces. */
-/* Traditional Chinese: Noto Serif TC (headings), Noto Sans HK (everything else), Caveat (Latin in accents). */
-html[lang="zh-Hant"] { --heading: var(--font-zh-serif), "Noto Serif TC", serif; --display: var(--font-zh-sans), "Noto Sans HK", sans-serif; --sans: var(--font-zh-sans), "Noto Sans HK", sans-serif; --hand: var(--font-hand), var(--font-zh-sans), "Noto Sans HK", sans-serif; }
+/* Traditional Chinese: Noto Serif TC (headings), Noto Sans HK (everything else), Aster Hand TC (accents; a ChenYuluoyan subset with its own Latin). */
+html[lang="zh-Hant"] { --heading: var(--font-zh-serif), "Noto Serif TC", serif; --display: var(--font-zh-sans), "Noto Sans HK", sans-serif; --sans: var(--font-zh-sans), "Noto Sans HK", sans-serif; --hand: var(--font-hand-zh), var(--font-zh-sans), "Noto Sans HK", sans-serif; }
 html[lang="zh-Hant"] body :is(h1, h2) { font-family: var(--heading); }
 /* Japanese: Hiragino Mincho / Yu Mincho, Hiragino Sans / Yu Gothic, Caveat (Latin in accents). */
 html[lang="ja"] { --display: "Hiragino Mincho ProN", "Yu Mincho", YuMincho, serif; --sans: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", YuGothic, sans-serif; --hand: var(--font-hand), "Hiragino Sans", "Yu Gothic", sans-serif; }

@@ -64,13 +64,16 @@ Three roles, set as custom properties and switched per language on
 | Language | Display | Text | Accent |
 | --- | --- | --- | --- |
 | English | Iowan Old Style (Palatino Linotype on Windows) | Avenir Next (Trebuchet MS / Gill Sans) | Caveat |
-| Traditional Chinese | Noto Serif TC for h1/h2, Noto Sans HK for other display text | Noto Sans HK | Caveat for Latin; Chinese falls to Noto Sans HK |
+| Traditional Chinese | Noto Serif TC for h1/h2, Noto Sans HK for other display text | Noto Sans HK | Aster Hand TC (subset of 辰宇落雁體 ChenYuluoyan 2.0 Thin, with its own Latin) |
 | Japanese | Hiragino Mincho ProN (Yu Mincho) | Hiragino Sans (Yu Gothic) | Caveat for Latin; Japanese falls to Hiragino Sans |
 | Korean | AppleMyungjo (Batang) | Apple SD Gothic Neo (Malgun Gothic) | Nanum Pen Script (self-hosted subset) |
 
 Caveat, Noto Serif TC and Noto Sans HK are self-hosted through `next/font`
 (`src/app/layout.tsx`); the Chinese faces load only on Chinese pages. The
-Korean subset lives in `src/fonts/` (see its README to regenerate it).
+Korean and Chinese handwriting subsets live in `src/fonts/` with their
+licences (see its README to regenerate them when handwritten copy changes).
+ChenYuluoyan has no kana or Hangul, so Japanese and Korean keep their own
+accent faces.
 
 Scale and style:
 
