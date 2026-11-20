@@ -36,6 +36,8 @@ one link (`/s/<code>`):
   type earn a watercolour flower with its language of flowers: globe amaranth
   (above 90% in line), blue iris (above 80%), iris (below 30%) or hydrangea
   (below 20%). The initiator sees each respondent's flower beside their name.
+- The initiator's page has a garden: every answer plants one of twelve painted
+  asters, and tapping a flower shows who planted it and the type they chose.
 - Initiators can opt in to an email when the ranking (3 answers), the
   question-by-question comparison (5) and the view by relationship (8) open.
 

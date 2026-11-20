@@ -16,6 +16,7 @@ import {
 import { useBloomCopy, type BloomKey } from "@/lib/bloom-i18n";
 import { I18nProvider, useI18n } from "@/lib/i18n";
 import { BadgeList, BloomHeader, BoardView, Questionnaire, TypePicker, api, useErrorText } from "./shared";
+import { Garden } from "./garden";
 
 interface Me {
   user: { email: string } | null;
@@ -378,6 +379,8 @@ function DashboardView({ data, reload }: { data: Dashboard; reload: () => Promis
           <button className="button secondary" onClick={async () => { await navigator.clipboard.writeText(link); setNotice(b("dash.copied")); }}>{b("dash.copy")}</button>
         </div>
       </section>
+
+      <Garden plants={[...responses].reverse()} />
 
       <section className="bloom-card">
         <span className="card-kicker">{b("dash.milestones")}</span>
