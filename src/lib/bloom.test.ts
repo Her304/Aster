@@ -5,11 +5,13 @@ import {
   THRESHOLDS,
   buildBoard,
   buildReport,
+  flowerFor,
   gapBadges,
   matchingLetters,
   readAxes,
   parseAnswers,
   scoreBloom,
+  similarity,
   undecidedAxes,
   type BloomAnswers,
   type ReportResponse,
@@ -133,6 +135,45 @@ describe("gap badges", () => {
   it("names each shared outside view and a divided reading", () => {
     const types = ["ESTJ", "ESFP", "ESTP", "ENFJ", "ESTJ"];
     expect(gapBadges(axesFor("INTJ", types), types.length)).toEqual(["undercover-introvert", "grounded-dreamer", "chameleon"]);
+  });
+});
+
+describe("flower achievements", () => {
+  it("measures the share of respondents' letters that match the initiator's", () => {
+    expect(similarity("ENFP", buildBoard(["ENFP", "ENFP"]))).toBeNull();
+    expect(similarity("ENFP", buildBoard(["ENFP", "ENFP", "ENFP"]))).toBe(100);
+    expect(similarity("ENFP", buildBoard(["ISTJ", "ISTJ", "ISTJ"]))).toBe(0);
+    // 4 + 2 + 2 = 8 of 12 letters.
+    expect(similarity("ENFP", buildBoard(["ENFP", "ENTJ", "ISFP"]))).toBe(67);
+  });
+
+  it("gives a flower only at either end of the range", () => {
+    expect(flowerFor(null)).toBeNull();
+    expect(flowerFor(100)).toBe("globe-amaranth");
+    expect(flowerFor(91)).toBe("globe-amaranth");
+    expect(flowerFor(90)).toBe("blue-iris");
+    expect(flowerFor(81)).toBe("blue-iris");
+    expect(flowerFor(80)).toBeNull();
+    expect(flowerFor(50)).toBeNull();
+    expect(flowerFor(30)).toBeNull();
+    expect(flowerFor(29)).toBe("iris");
+    expect(flowerFor(20)).toBe("iris");
+    expect(flowerFor(19)).toBe("hydrangea");
+    expect(flowerFor(0)).toBe("hydrangea");
+  });
+
+  it("is carried on the report", () => {
+    const responses = Array.from({ length: 3 }, () => ({ relation: "family" as const, type: "ENFP", answers: answersFor("ENFP") }));
+    expect(buildReport("ENFP", null, responses)).toMatchObject({ similarity: 100, flower: "globe-amaranth" });
+    expect(buildReport("ENFP", null, responses.slice(0, 2))).toMatchObject({ similarity: null, flower: null });
+  });
+
+  it("names and explains every flower in every language", () => {
+    for (const table of Object.values(bloomTranslations)) {
+      for (const flower of ["globe-amaranth", "blue-iris", "iris", "hydrangea"]) {
+        for (const part of ["name", "meaning", "body"]) expect(table[`flower.${part}.${flower}` as keyof typeof table]).toBeTruthy();
+      }
+    }
   });
 });
 

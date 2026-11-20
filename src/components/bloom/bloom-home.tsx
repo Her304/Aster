@@ -8,13 +8,14 @@ import {
   isPersonalityType,
   scoreBloom,
   type Badge,
+  type Flower,
   type Board,
   type BloomAnswers,
   type Tiebreaks,
 } from "@/lib/bloom";
 import { useBloomCopy, type BloomKey } from "@/lib/bloom-i18n";
 import { I18nProvider, useI18n } from "@/lib/i18n";
-import { BadgeList, BloomHeader, BoardView, Questionnaire, TypePicker, api, useErrorText } from "./shared";
+import { BadgeList, BloomHeader, FlowerAchievement, BoardView, Questionnaire, TypePicker, api, useErrorText } from "./shared";
 
 interface Me {
   user: { email: string } | null;
@@ -35,6 +36,8 @@ interface Dashboard {
   } | null;
   board?: Board;
   badges?: Badge[];
+  similarity?: number | null;
+  flower?: Flower | null;
   responses?: Array<{ id: string; name: string; relation: string; type: string; signedIn: boolean; submittedAt: string }>;
 }
 
@@ -390,6 +393,8 @@ function DashboardView({ data, reload }: { data: Dashboard; reload: () => Promis
         </ol>
         <Link className="button ink-outline" href="/bloom/report">{b("dash.openReport")} <ArrowIcon /></Link>
       </section>
+
+      {data.flower && typeof data.similarity === "number" && <FlowerAchievement flower={data.flower} similarity={data.similarity} />}
 
       {data.badges && data.badges.length > 0 && (
         <section className="bloom-card">

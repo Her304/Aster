@@ -249,12 +249,52 @@ export function gapBadges(axes: readonly AxisReading[], total: number): Badge[] 
   return badges;
 }
 
+/**
+ * Flower achievements, keyed by how closely others' letters match the
+ * initiator's own. Only the two ends of the range earn a flower.
+ */
+export const FLOWERS = ["globe-amaranth", "blue-iris", "iris", "hydrangea"] as const;
+export type Flower = (typeof FLOWERS)[number];
+
+/**
+ * The share of every respondent's letters, across all four axes, that match
+ * the initiator's own type: 100 when everyone chose exactly their type, 0
+ * when everyone chose its opposite. Null until the ranking opens.
+ */
+export function similarity(selfType: string, board: Board): number | null {
+  if (board.total < THRESHOLDS.board) return null;
+  const matches = board.letters.reduce((sum, split, index) => {
+    const selfLetter = selfType[index];
+    return sum + (split.first.letter === selfLetter ? split.first.count : split.second.count);
+  }, 0);
+  return Math.round((matches / (board.total * board.letters.length)) * 100);
+}
+
+/**
+ * Above 90%: globe amaranth, the "unfading" flower of constancy.
+ * Above 80%: blue iris, faith and trust.
+ * Below 20%: hydrangea, whose colour changes with its soil.
+ * Below 30%: iris, the rainbow's messenger.
+ * Anything between earns no flower.
+ */
+export function flowerFor(score: number | null): Flower | null {
+  if (score === null) return null;
+  if (score > 90) return "globe-amaranth";
+  if (score > 80) return "blue-iris";
+  if (score < 20) return "hydrangea";
+  if (score < 30) return "iris";
+  return null;
+}
+
 export interface BloomReport {
   total: number;
   selfType: string;
   board: Board;
   axes: AxisReading[];
   badges: Badge[];
+  /** Percentage of respondents' letters that match the initiator's; null below the board threshold. */
+  similarity: number | null;
+  flower: Flower | null;
   behaviours:
     | { status: "locked"; needed: number }
     | { status: "needs-self" }
@@ -327,5 +367,6 @@ export function buildReport(
     audiences = { status: "ready", groups };
   }
 
-  return { total, selfType, board, axes, badges: gapBadges(axes, total), behaviours, audiences };
+  const score = similarity(selfType, board);
+  return { total, selfType, board, axes, badges: gapBadges(axes, total), similarity: score, flower: flowerFor(score), behaviours, audiences };
 }

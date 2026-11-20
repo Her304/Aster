@@ -1,5 +1,6 @@
 "use client";
 
+import Image, { type StaticImageData } from "next/image";
 import Link from "next/link";
 import { useCallback, useState, type ReactNode } from "react";
 import { ArrowIcon, BrandMark, LanguageSelect } from "@/components/ui";
@@ -11,11 +12,16 @@ import {
   type Badge,
   type Board,
   type BloomAnswers,
+  type Flower,
   type Tiebreaks,
 } from "@/lib/bloom";
 import { useBloomCopy, type BloomKey } from "@/lib/bloom-i18n";
 import { translateQuestion, useI18n, type TranslationKey } from "@/lib/i18n";
 import type { Dimension } from "@/lib/scoring";
+import blueIris from "@/images/flowers/blue-iris.webp";
+import globeAmaranth from "@/images/flowers/globe-amaranth.webp";
+import hydrangea from "@/images/flowers/hydrangea.webp";
+import iris from "@/images/flowers/iris.webp";
 
 export class ApiError extends Error {
   constructor(message: string, readonly status: number, readonly body: Record<string, unknown>) {
@@ -262,5 +268,30 @@ export function BadgeList({ badges }: { badges: readonly Badge[] }) {
         </li>
       ))}
     </ul>
+  );
+}
+
+const flowerPaintings: Record<Flower, StaticImageData> = {
+  "globe-amaranth": globeAmaranth,
+  "blue-iris": blueIris,
+  iris,
+  hydrangea,
+};
+
+/** The flower earned at either end of the similarity range, with its language of flowers. */
+export function FlowerAchievement({ flower, similarity }: { flower: Flower; similarity: number }) {
+  const b = useBloomCopy();
+  const name = b(`flower.name.${flower}`);
+  return (
+    <section className={`bloom-card flower-card ${flower}`}>
+      <Image className="flower-painting" src={flowerPaintings[flower]} alt={b("flower.alt", { name })} sizes="(max-width: 640px) 50vw, 200px" />
+      <div className="flower-copy">
+        <span className="card-kicker">{b("flower.kicker")}</span>
+        <h2 className="card-title">{name}</h2>
+        <em className="flower-meaning">{b(`flower.meaning.${flower}`)}</em>
+        <p>{b(`flower.body.${flower}`)}</p>
+        <small className="flower-score">{b("flower.score", { score: similarity })}</small>
+      </div>
+    </section>
   );
 }
