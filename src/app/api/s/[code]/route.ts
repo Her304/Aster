@@ -11,8 +11,9 @@ type Params = { params: Promise<{ code: string }> };
 
 /**
  * What one viewer may see of a survey. The initiator's type and the ranking
- * appear only after this browser (or account) has answered; the ranking also
- * waits for enough answers that no single one can be picked out.
+ * appear only after this browser (or account) has answered, along with the
+ * respondent's own flower; the ranking also waits for enough answers that no
+ * single one can be picked out.
  */
 export async function GET(_request: Request, { params }: Params) {
   const { code } = await params;
@@ -23,15 +24,15 @@ export async function GET(_request: Request, { params }: Params) {
   const own = isOwner ? undefined : await findOwnResponse(survey.id, visitor?.id, user?.id);
   const board = await surveyBoard(survey.id);
   const canSeeBoard = isOwner || (own !== undefined && Boolean(survey.board_public));
-  const flowersOpen = board.total >= THRESHOLDS.flowers;
-  const similarity = own && flowersOpen ? responseSimilarity(survey.self_type, await responseAnswers(own.id)) : null;
+  // A respondent's flower depends only on their own answers and the owner's
+  // type, which they see once they've answered, so it shows straight away.
+  const similarity = own ? responseSimilarity(survey.self_type, await responseAnswers(own.id)) : null;
 
   return NextResponse.json({
     survey: { code: survey.code, displayName: survey.display_name, status: survey.status },
     viewer: { isOwner, signedIn: Boolean(user) },
     total: board.total,
     boardThreshold: THRESHOLDS.board,
-    flowerThreshold: THRESHOLDS.flowers,
     boardPublic: Boolean(survey.board_public),
     response: own
       ? {
