@@ -398,7 +398,7 @@ function DashboardView({ data, reload }: { data: Dashboard; reload: () => Promis
       <section className="bloom-hero">
         <span className="eyebrow">{b("dash.eyebrow")}</span>
         <h1>{b("dash.title", { name: survey.displayName })}</h1>
-        <p>{b("board.answers", { count: total })}{survey.status === "closed" && ` · ${b("dash.closedNote")}`}</p>
+        <p>{b(total === 1 ? "board.answer" : "board.answers", { count: total })}{survey.status === "closed" && ` · ${b("dash.closedNote")}`}</p>
       </section>
 
       <section className="bloom-card link-card">

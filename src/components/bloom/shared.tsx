@@ -254,7 +254,7 @@ export function BoardView({
   const showMajorityNote = board.majorityType !== null && !topTypes.includes(board.majorityType);
   return (
     <div className="board">
-      <p className="board-total">{b("board.answers", { count: board.total })}</p>
+      <p className="board-total">{b(board.total === 1 ? "board.answer" : "board.answers", { count: board.total })}</p>
       <ol className="board-list">
         {board.types.map((entry, index) => (
           <li key={entry.type} className={entry.type === selfType ? "is-self" : ""}>

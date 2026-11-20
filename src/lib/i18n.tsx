@@ -147,7 +147,7 @@ const en = {
   "wait.title": "Thanks, {{name}}. You’re finished.",
   "wait.body": "Results open for everyone once the whole circle is done. This page updates by itself.",
   "wait.progress": "{{done}} of {{total}} people finished",
-  "wait.member": "Answered about {{done}} of {{total}}",
+  "wait.member": "Answered for {{done}} of {{total}} people",
   "wait.done": "Finished",
   "results.selfLine": "You say {{type}}. Your friends matched {{count}} of 4 letters.",
   "results.selfExact": "You say {{type}} too — a perfect match.",
