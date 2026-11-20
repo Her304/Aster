@@ -1,13 +1,14 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { currentUser } from "@/lib/accounts";
-import { flowerFor, gapBadges, isPersonalityType, parseAnswers, parseTiebreaks, readAxes, scoreBloom, similarity } from "@/lib/bloom";
+import { flowerFor, gapBadges, isPersonalityType, parseAnswers, parseTiebreaks, readAxes, responseSimilarity, scoreBloom } from "@/lib/bloom";
 import {
   getSurveyByOwner,
   insertResponse,
   isoTime,
   listResponses,
   ownerSelfAnswers,
+  respondentAnswers,
   surveyBoard,
   surveyCode,
 } from "@/lib/bloom-data";
@@ -22,12 +23,12 @@ export async function GET() {
   if (!user) return error("Sign in first.", 401);
   const survey = await getSurveyByOwner(user.id);
   if (!survey) return NextResponse.json({ user: { email: user.email }, survey: null });
-  const [responses, board, self] = await Promise.all([
+  const [responses, board, self, answers] = await Promise.all([
     listResponses(survey.id),
     surveyBoard(survey.id),
     ownerSelfAnswers(survey.id),
+    respondentAnswers(survey.id),
   ]);
-  const score = similarity(survey.self_type, board);
   return NextResponse.json({
     user: { email: user.email },
     survey: {
@@ -42,13 +43,12 @@ export async function GET() {
     },
     board,
     badges: gapBadges(readAxes(survey.self_type, board), board.total),
-    similarity: score,
-    flower: flowerFor(score),
     responses: responses.map((response) => ({
       id: response.id,
       name: response.respondent_name,
       relation: response.relation,
       type: response.result_type,
+      flower: flowerFor(responseSimilarity(survey.self_type, answers.get(response.id) ?? {})),
       signedIn: Boolean(response.user_id),
       submittedAt: isoTime(response.submitted_at),
     })),

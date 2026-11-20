@@ -90,6 +90,31 @@ export async function surveyBoard(surveyId: string) {
   return buildBoard(await responseTypes(surveyId));
 }
 
+/** Each respondent's sixteen answers, keyed by response id. */
+export async function respondentAnswers(surveyId: string): Promise<Map<string, BloomAnswers>> {
+  const rows = await queryAll<{ response_id: string; question_id: number | string; value: number | string }>(
+    `SELECT a.response_id, a.question_id, a.value FROM survey_answers a
+     JOIN survey_responses r ON r.id = a.response_id
+     WHERE r.survey_id = ? AND r.is_owner = 0`,
+    [surveyId],
+  );
+  const answers = new Map<string, BloomAnswers>();
+  for (const row of rows) {
+    const own = answers.get(row.response_id) ?? {};
+    own[Number(row.question_id)] = Number(row.value);
+    answers.set(row.response_id, own);
+  }
+  return answers;
+}
+
+export async function responseAnswers(responseId: string): Promise<BloomAnswers> {
+  const rows = await queryAll<{ question_id: number | string; value: number | string }>(
+    "SELECT question_id, value FROM survey_answers WHERE response_id = ?",
+    [responseId],
+  );
+  return Object.fromEntries(rows.map((row) => [Number(row.question_id), Number(row.value)]));
+}
+
 export async function ownerSelfAnswers(surveyId: string): Promise<BloomAnswers | null> {
   const rows = await queryAll<{ question_id: number | string; value: number | string }>(
     `SELECT a.question_id, a.value FROM survey_answers a

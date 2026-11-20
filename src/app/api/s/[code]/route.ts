@@ -1,7 +1,7 @@
 import { NextResponse, after } from "next/server";
 import { createVisitor, currentUser, currentVisitor, visitorCookie } from "@/lib/accounts";
-import { THRESHOLDS, isRelation, parseAnswers, parseTiebreaks, scoreBloom } from "@/lib/bloom";
-import { findOwnResponse, getSurveyByCode, insertResponse, isoTime, notifyMilestone, surveyBoard } from "@/lib/bloom-data";
+import { THRESHOLDS, flowerFor, isRelation, parseAnswers, parseTiebreaks, responseSimilarity, scoreBloom } from "@/lib/bloom";
+import { findOwnResponse, getSurveyByCode, insertResponse, isoTime, notifyMilestone, responseAnswers, surveyBoard } from "@/lib/bloom-data";
 import { transaction } from "@/lib/db";
 import { cleanNickname, clientKey, error, isCrossSite, isRateLimited } from "@/lib/http";
 
@@ -23,6 +23,7 @@ export async function GET(_request: Request, { params }: Params) {
   const own = isOwner ? undefined : await findOwnResponse(survey.id, visitor?.id, user?.id);
   const board = await surveyBoard(survey.id);
   const canSeeBoard = isOwner || (own !== undefined && Boolean(survey.board_public));
+  const similarity = own ? responseSimilarity(survey.self_type, await responseAnswers(own.id)) : null;
 
   return NextResponse.json({
     survey: { code: survey.code, displayName: survey.display_name, status: survey.status },
@@ -31,7 +32,14 @@ export async function GET(_request: Request, { params }: Params) {
     boardThreshold: THRESHOLDS.board,
     boardPublic: Boolean(survey.board_public),
     response: own
-      ? { name: own.respondent_name, relation: own.relation, type: own.result_type, submittedAt: isoTime(own.submitted_at) }
+      ? {
+          name: own.respondent_name,
+          relation: own.relation,
+          type: own.result_type,
+          submittedAt: isoTime(own.submitted_at),
+          similarity,
+          flower: flowerFor(similarity),
+        }
       : null,
     selfType: isOwner || own ? survey.self_type : null,
     board: canSeeBoard && (isOwner || board.total >= THRESHOLDS.board) ? board : null,

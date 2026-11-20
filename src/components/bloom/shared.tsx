@@ -278,8 +278,8 @@ const flowerPaintings: Record<Flower, StaticImageData> = {
   hydrangea,
 };
 
-/** The flower earned at either end of the similarity range, with its language of flowers. */
-export function FlowerAchievement({ flower, similarity }: { flower: Flower; similarity: number }) {
+/** A respondent's flower, earned at either end of the similarity range, with its language of flowers. */
+export function FlowerAchievement({ flower, similarity, ownerName }: { flower: Flower; similarity: number; ownerName: string }) {
   const b = useBloomCopy();
   const name = b(`flower.name.${flower}`);
   return (
@@ -289,8 +289,8 @@ export function FlowerAchievement({ flower, similarity }: { flower: Flower; simi
         <span className="card-kicker">{b("flower.kicker")}</span>
         <h2 className="card-title">{name}</h2>
         <em className="flower-meaning">{b(`flower.meaning.${flower}`)}</em>
-        <p>{b(`flower.body.${flower}`)}</p>
-        <small className="flower-score">{b("flower.score", { score: similarity })}</small>
+        <p>{b(`flower.body.${flower}`, { name: ownerName })}</p>
+        <small className="flower-score">{b("flower.score", { score: similarity, name: ownerName })}</small>
       </div>
     </section>
   );

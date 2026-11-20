@@ -10,8 +10,8 @@ import {
   matchingLetters,
   readAxes,
   parseAnswers,
+  responseSimilarity,
   scoreBloom,
-  similarity,
   undecidedAxes,
   type BloomAnswers,
   type ReportResponse,
@@ -139,12 +139,15 @@ describe("gap badges", () => {
 });
 
 describe("flower achievements", () => {
-  it("measures the share of respondents' letters that match the initiator's", () => {
-    expect(similarity("ENFP", buildBoard(["ENFP", "ENFP"]))).toBeNull();
-    expect(similarity("ENFP", buildBoard(["ENFP", "ENFP", "ENFP"]))).toBe(100);
-    expect(similarity("ENFP", buildBoard(["ISTJ", "ISTJ", "ISTJ"]))).toBe(0);
-    // 4 + 2 + 2 = 8 of 12 letters.
-    expect(similarity("ENFP", buildBoard(["ENFP", "ENTJ", "ISFP"]))).toBe(67);
+  it("measures how far one respondent's answers lean towards the initiator's letters", () => {
+    expect(responseSimilarity("ENFP", answersFor("ENFP"))).toBe(100);
+    expect(responseSimilarity("ENFP", answersFor("ISTJ"))).toBe(0);
+    // Agreeing on every letter, but only mildly (4 or 2), is three-quarters of the way.
+    expect(responseSimilarity("ENFP", answersFor("ENFP", 4))).toBe(75);
+    // Two letters fully backed, two fully opposed.
+    expect(responseSimilarity("ENFP", answersFor("ENTJ"))).toBe(50);
+    // "Not sure" on everything sits halfway.
+    expect(responseSimilarity("ENFP", Object.fromEntries(BLOOM_QUESTION_IDS.map((id) => [id, 0])))).toBe(50);
   });
 
   it("gives a flower only at either end of the range", () => {
@@ -160,12 +163,6 @@ describe("flower achievements", () => {
     expect(flowerFor(20)).toBe("iris");
     expect(flowerFor(19)).toBe("hydrangea");
     expect(flowerFor(0)).toBe("hydrangea");
-  });
-
-  it("is carried on the report", () => {
-    const responses = Array.from({ length: 3 }, () => ({ relation: "family" as const, type: "ENFP", answers: answersFor("ENFP") }));
-    expect(buildReport("ENFP", null, responses)).toMatchObject({ similarity: 100, flower: "globe-amaranth" });
-    expect(buildReport("ENFP", null, responses.slice(0, 2))).toMatchObject({ similarity: null, flower: null });
   });
 
   it("names and explains every flower in every language", () => {

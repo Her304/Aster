@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { ArrowIcon } from "@/components/ui";
-import { RELATIONS, matchingLetters, type Board, type BloomAnswers, type Relation, type Tiebreaks } from "@/lib/bloom";
+import { RELATIONS, matchingLetters, type Board, type BloomAnswers, type Flower, type Relation, type Tiebreaks } from "@/lib/bloom";
 import { useBloomCopy } from "@/lib/bloom-i18n";
 import { I18nProvider, useI18n } from "@/lib/i18n";
-import { ApiError, BloomHeader, BoardView, Questionnaire, api, useErrorText } from "./shared";
+import { ApiError, BloomHeader, BoardView, FlowerAchievement, Questionnaire, api, useErrorText } from "./shared";
 
 interface SurveyView {
   survey: { code: string; displayName: string; status: "open" | "closed" };
@@ -14,7 +14,7 @@ interface SurveyView {
   total: number;
   boardThreshold: number;
   boardPublic: boolean;
-  response: { name: string; relation: string; type: string; submittedAt: string } | null;
+  response: { name: string; relation: string; type: string; submittedAt: string; similarity: number | null; flower: Flower | null } | null;
   selfType: string | null;
   board: Board | null;
 }
@@ -169,6 +169,7 @@ function ResultView({ view }: { view: SurveyView }) {
           <p>{matched === 4 ? b("s.resultExact", { name: ownerName, type: view.selfType }) : b("s.resultSelf", { name: ownerName, type: view.selfType, count: matched })}</p>
         )}
       </section>
+      {response.flower && response.similarity !== null && <FlowerAchievement flower={response.flower} similarity={response.similarity} ownerName={ownerName} />}
       <section className="bloom-card">
         <h2 className="card-title">{b("s.boardTitle", { name: ownerName })}</h2>
         {view.board ? (

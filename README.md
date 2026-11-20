@@ -32,6 +32,10 @@ one link (`/s/<code>`):
 - Gap badges (such as "Undercover introvert" or "Chameleon") name the shape of
   the difference, and the initiator can share a story-sized result card.
 - Each survey link has its own preview image when pasted into a chat.
+- Respondents whose answers sit far from, or close to, the initiator's own
+  type earn a watercolour flower with its language of flowers: globe amaranth
+  (above 90% in line), blue iris (above 80%), iris (below 30%) or hydrangea
+  (below 20%). The initiator sees each respondent's flower beside their name.
 - Initiators can opt in to an email when the ranking (3 answers), the
   question-by-question comparison (5) and the view by relationship (8) open.
 
